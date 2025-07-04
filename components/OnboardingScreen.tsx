@@ -76,7 +76,7 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
   };
   
   const handleDateSelect = (date: Date) => {
-    // Fix: Use local date conversion to avoid timezone issues
+    // Use local date to avoid timezone issues
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -96,7 +96,7 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
     });
   };
   
-  // Group consecutive selected dates into periods
+  // Group consecutive selected dates into periods - FIXED VERSION
   const groupConsecutiveDates = (dates: string[]): HistoricalPeriod[] => {
     if (dates.length === 0) return [];
     
@@ -118,7 +118,7 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
           periods.push({
             startDate: currentPeriod[0],
             endDate: currentPeriod[currentPeriod.length - 1],
-            length: currentPeriod.length
+            length: currentPeriod.length // Use actual length of selected dates
           });
         }
         currentPeriod = [sortedDates[i]];
@@ -130,7 +130,7 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
       periods.push({
         startDate: currentPeriod[0],
         endDate: currentPeriod[currentPeriod.length - 1],
-        length: currentPeriod.length
+        length: currentPeriod.length // Use actual length of selected dates
       });
     }
     
@@ -201,7 +201,6 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
   };
   
   const isSelected = (date: Date) => {
-    // Fix: Use same date conversion method
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');

@@ -156,7 +156,7 @@ export const usePeriodStore = create<PeriodState>()(
             const newLogs = [...state.logs];
             
             periods.forEach(period => {
-              // Create logs for each day of the period
+              // Create logs for each day of the period - only for the exact length specified
               for (let i = 0; i < period.length; i++) {
                 const logDate = new Date(period.startDate);
                 logDate.setDate(logDate.getDate() + i);
@@ -166,12 +166,14 @@ export const usePeriodStore = create<PeriodState>()(
                 
                 // Determine flow intensity based on day of period
                 let flow: FlowIntensity = 'medium';
-                if (i === 0 || i === 1) {
+                if (i === 0) {
+                  flow = 'light';
+                } else if (i === 1 || i === 2) {
                   flow = 'medium';
-                } else if (i === period.length - 1 || i === period.length - 2) {
+                } else if (i === period.length - 1) {
                   flow = 'light';
                 } else {
-                  flow = 'medium';
+                  flow = 'heavy';
                 }
                 
                 if (existingLogIndex >= 0) {
@@ -301,12 +303,12 @@ export const usePeriodStore = create<PeriodState>()(
               }
             }
             
-            let cycleAvgLength: number = CYCLE_CONSTANTS.DEFAULT_CYCLE_LENGTH;
-            let periodAvgLength: number = CYCLE_CONSTANTS.DEFAULT_PERIOD_LENGTH;
+            let cycleAvgLength = CYCLE_CONSTANTS.DEFAULT_CYCLE_LENGTH;
+            let periodAvgLength = CYCLE_CONSTANTS.DEFAULT_PERIOD_LENGTH;
             
             if (cycles.length > 0) {
               const cycleLengths = cycles.map(c => c.length);
-              cycleAvgLength = Math.round(cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length) as number;
+              cycleAvgLength = Math.round(cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length);
               
               const periodLengths = cycles.map(c => c.periodLength);
               periodAvgLength = Math.round(periodLengths.reduce((sum, len) => sum + len, 0) / periodLengths.length);

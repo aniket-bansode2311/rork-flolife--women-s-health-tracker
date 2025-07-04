@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { usePeriodStore } from '@/store/periodStore';
 import { useTheme } from '@/hooks/useTheme';
-import { getMonthDates, getTodayISO, predictNextPeriod, calculateFertilityWindow } from '@/utils/dateUtils';
+import { getMonthDates, getTodayISO, predictNextPeriod, isDateInFertileWindow } from '@/utils/dateUtils';
 import { CalendarHeader } from './calendar/CalendarHeader';
 import { CalendarDay } from './calendar/CalendarDay';
 import { CalendarLegend } from './calendar/CalendarLegend';
@@ -24,18 +24,13 @@ export default function CalendarView({ onSelectDate }: CalendarViewProps) {
   const { logs, profile } = usePeriodStore();
   
   // Memoized calculations for better performance
-  const { nextPeriodStart, fertilityWindow } = useMemo(() => {
+  const { nextPeriodStart } = useMemo(() => {
     const nextPeriod = profile.lastPeriodStart 
       ? predictNextPeriod(profile.lastPeriodStart, profile.cycleAvgLength)
       : null;
       
-    const fertility = nextPeriod 
-      ? calculateFertilityWindow(nextPeriod, profile.cycleAvgLength)
-      : null;
-      
     return {
       nextPeriodStart: nextPeriod,
-      fertilityWindow: fertility,
     };
   }, [profile.lastPeriodStart, profile.cycleAvgLength]);
   
@@ -67,12 +62,10 @@ export default function CalendarView({ onSelectDate }: CalendarViewProps) {
         }
       }
       
-      // Check fertile day
+      // Check fertile day using enhanced calculation
       let isFertileDay = false;
-      if (fertilityWindow) {
-        const fertilityStart = new Date(fertilityWindow.start);
-        const fertilityEnd = new Date(fertilityWindow.end);
-        isFertileDay = date >= fertilityStart && date <= fertilityEnd;
+      if (profile.lastPeriodStart) {
+        isFertileDay = isDateInFertileWindow(date, profile.lastPeriodStart, profile.cycleAvgLength);
       }
       
       return {
@@ -85,7 +78,7 @@ export default function CalendarView({ onSelectDate }: CalendarViewProps) {
         isFertileDay,
       };
     });
-  }, [currentYear, currentMonth, logs, selectedDate, nextPeriodStart, fertilityWindow, profile.periodAvgLength]);
+  }, [currentYear, currentMonth, logs, selectedDate, nextPeriodStart, profile.periodAvgLength, profile.lastPeriodStart, profile.cycleAvgLength]);
   
   const handlePreviousMonth = useCallback(() => {
     if (currentMonth === 0) {

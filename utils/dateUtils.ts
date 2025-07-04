@@ -52,17 +52,87 @@ export const predictNextPeriod = (lastPeriodStart: string, avgCycleLength: numbe
   return nextDate.toISOString().split('T')[0];
 };
 
-// Calculate fertility window (usually 5 days before ovulation + ovulation day)
-export const calculateFertilityWindow = (nextPeriodStart: string, avgCycleLength: number): { start: string; end: string } => {
-  const nextPeriod = new Date(nextPeriodStart);
+// Enhanced fertility window calculation
+export const calculateFertilityWindow = (
+  lastPeriodStart: string, 
+  avgCycleLength: number
+): { start: string; end: string; ovulationDate: string } => {
+  const lastPeriod = new Date(lastPeriodStart);
+  
+  // Calculate the next period start
+  const nextPeriodStart = addDays(lastPeriod, avgCycleLength);
+  
   // Ovulation typically occurs 14 days before the next period
-  const ovulationDate = subtractDays(nextPeriod, 14);
+  const ovulationDate = subtractDays(nextPeriodStart, 14);
+  
+  // Fertile window is typically 5 days before ovulation + ovulation day + 1 day after
   const fertilityStart = subtractDays(ovulationDate, 5);
+  const fertilityEnd = addDays(ovulationDate, 1);
   
   return {
     start: fertilityStart.toISOString().split('T')[0],
-    end: ovulationDate.toISOString().split('T')[0],
+    end: fertilityEnd.toISOString().split('T')[0],
+    ovulationDate: ovulationDate.toISOString().split('T')[0],
   };
+};
+
+// Calculate fertility window for any given month
+export const calculateFertilityWindowForMonth = (
+  year: number,
+  month: number,
+  lastPeriodStart: string,
+  avgCycleLength: number
+): { start: string; end: string; ovulationDate: string }[] => {
+  const windows: { start: string; end: string; ovulationDate: string }[] = [];
+  
+  // Get the first and last day of the month
+  const monthStart = new Date(year, month, 1);
+  const monthEnd = new Date(year, month + 1, 0);
+  
+  // Start from the last period and calculate cycles that might overlap with this month
+  let currentPeriodStart = new Date(lastPeriodStart);
+  
+  // Go back a few cycles to ensure we catch any that might overlap
+  for (let i = 0; i < 3; i++) {
+    currentPeriodStart = subtractDays(currentPeriodStart, avgCycleLength);
+  }
+  
+  // Calculate forward until we're past the month
+  while (currentPeriodStart <= addDays(monthEnd, avgCycleLength)) {
+    const window = calculateFertilityWindow(
+      currentPeriodStart.toISOString().split('T')[0],
+      avgCycleLength
+    );
+    
+    const windowStart = new Date(window.start);
+    const windowEnd = new Date(window.end);
+    
+    // Check if this window overlaps with the current month
+    if (windowStart <= monthEnd && windowEnd >= monthStart) {
+      windows.push(window);
+    }
+    
+    currentPeriodStart = addDays(currentPeriodStart, avgCycleLength);
+  }
+  
+  return windows;
+};
+
+// Check if a date is in fertile window
+export const isDateInFertileWindow = (
+  date: Date,
+  lastPeriodStart: string,
+  avgCycleLength: number
+): boolean => {
+  const dateStr = date.toISOString().split('T')[0];
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  
+  const windows = calculateFertilityWindowForMonth(year, month, lastPeriodStart, avgCycleLength);
+  
+  return windows.some(window => {
+    return dateStr >= window.start && dateStr <= window.end;
+  });
 };
 
 // Calculate average cycle length from historical data
