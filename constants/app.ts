@@ -1,0 +1,32 @@
+export const APP_CONFIG = {
+  NAME: 'Cyclix',
+  VERSION: '1.0.0',
+  DESCRIPTION: 'Your Intelligent Period Tracker',
+  COPYRIGHT: '© 2025 Cyclix - Your Intelligent Period Tracker',
+} as const;
+
+export const CYCLE_CONSTANTS = {
+  MIN_CYCLE_LENGTH: 21,
+  MAX_CYCLE_LENGTH: 45,
+  DEFAULT_CYCLE_LENGTH: 28,
+  MIN_PERIOD_LENGTH: 2,
+  MAX_PERIOD_LENGTH: 10,
+  DEFAULT_PERIOD_LENGTH: 5,
+  MIN_CYCLES_FOR_PREDICTION: 3,
+  MIN_LOGS_FOR_AI: 15,
+  OVULATION_DAYS_BEFORE_PERIOD: 14,
+} as const;
+
+export const UI_CONSTANTS = {
+  CALENDAR_DAYS_PER_WEEK: 7,
+  CALENDAR_WEEKS: 6,
+  ANIMATION_DURATION: 300,
+  DEBOUNCE_DELAY: 500,
+} as const;
+
+export const VALIDATION_MESSAGES = {
+  INVALID_CYCLE_LENGTH: `Please enter a number between ${CYCLE_CONSTANTS.MIN_CYCLE_LENGTH} and ${CYCLE_CONSTANTS.MAX_CYCLE_LENGTH}`,
+  INVALID_PERIOD_LENGTH: `Please enter a number between ${CYCLE_CONSTANTS.MIN_PERIOD_LENGTH} and ${CYCLE_CONSTANTS.MAX_PERIOD_LENGTH}`,
+  REQUIRED_FIELD: 'This field is required',
+  INVALID_DATE: 'Please select a valid date',
+} as const;
