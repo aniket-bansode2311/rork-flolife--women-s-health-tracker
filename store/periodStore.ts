@@ -301,12 +301,12 @@ export const usePeriodStore = create<PeriodState>()(
               }
             }
             
-            let cycleAvgLength = CYCLE_CONSTANTS.DEFAULT_CYCLE_LENGTH;
-            let periodAvgLength = CYCLE_CONSTANTS.DEFAULT_PERIOD_LENGTH;
+            let cycleAvgLength: number = CYCLE_CONSTANTS.DEFAULT_CYCLE_LENGTH;
+            let periodAvgLength: number = CYCLE_CONSTANTS.DEFAULT_PERIOD_LENGTH;
             
             if (cycles.length > 0) {
               const cycleLengths = cycles.map(c => c.length);
-              cycleAvgLength = Math.round(cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length);
+              cycleAvgLength = Math.round(cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length) as number;
               
               const periodLengths = cycles.map(c => c.periodLength);
               periodAvgLength = Math.round(periodLengths.reduce((sum, len) => sum + len, 0) / periodLengths.length);
