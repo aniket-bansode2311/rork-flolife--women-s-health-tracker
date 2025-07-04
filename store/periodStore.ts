@@ -21,7 +21,7 @@ interface PeriodState {
   endPeriod: (date: string) => void;
   calculateCycles: () => void;
   resetAllData: () => void;
-  addHistoricalData: (periods: { startDate: string; length: number }[]) => void;
+  addHistoricalData: (periods: { startDate: string; endDate?: string; length: number }[]) => void;
 }
 
 const initialState = {
@@ -156,6 +156,7 @@ export const usePeriodStore = create<PeriodState>()(
             const newLogs = [...state.logs];
             
             periods.forEach(period => {
+              // Create logs for each day of the period
               for (let i = 0; i < period.length; i++) {
                 const logDate = new Date(period.startDate);
                 logDate.setDate(logDate.getDate() + i);
@@ -163,7 +164,15 @@ export const usePeriodStore = create<PeriodState>()(
                 
                 const existingLogIndex = newLogs.findIndex(log => log.date === dateStr);
                 
-                const flow: FlowIntensity = i === 0 ? 'medium' : (i < 2 ? 'medium' : 'light');
+                // Determine flow intensity based on day of period
+                let flow: FlowIntensity = 'medium';
+                if (i === 0 || i === 1) {
+                  flow = 'medium';
+                } else if (i === period.length - 1 || i === period.length - 2) {
+                  flow = 'light';
+                } else {
+                  flow = 'medium';
+                }
                 
                 if (existingLogIndex >= 0) {
                   newLogs[existingLogIndex] = {
@@ -292,8 +301,8 @@ export const usePeriodStore = create<PeriodState>()(
               }
             }
             
-            let cycleAvgLength: number = CYCLE_CONSTANTS.DEFAULT_CYCLE_LENGTH;
-            let periodAvgLength: number = CYCLE_CONSTANTS.DEFAULT_PERIOD_LENGTH;
+            let cycleAvgLength = CYCLE_CONSTANTS.DEFAULT_CYCLE_LENGTH;
+            let periodAvgLength = CYCLE_CONSTANTS.DEFAULT_PERIOD_LENGTH;
             
             if (cycles.length > 0) {
               const cycleLengths = cycles.map(c => c.length);

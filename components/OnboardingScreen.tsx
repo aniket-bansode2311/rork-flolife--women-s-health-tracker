@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 
 interface HistoricalPeriod {
   startDate: string;
+  endDate: string;
   length: number;
 }
 
@@ -21,12 +22,11 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() - 1); // Start from last month
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
-  const [currentPeriodLength, setCurrentPeriodLength] = useState('5');
   
   const handleNext = () => {
     if (step < 4) {
       if (step === 3 && selectedDates.length === 0 && historicalPeriods.length === 0) {
-        Alert.alert('Add Historical Data', 'Please select at least one period start date from the calendar, or skip to continue with default settings.');
+        Alert.alert('Add Historical Data', 'Please select your period dates from the calendar, or skip to continue with default settings.');
         return;
       }
       setStep(step + 1);
@@ -96,18 +96,53 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
     });
   };
   
+  // Group consecutive selected dates into periods
+  const groupConsecutiveDates = (dates: string[]): HistoricalPeriod[] => {
+    if (dates.length === 0) return [];
+    
+    const sortedDates = [...dates].sort();
+    const periods: HistoricalPeriod[] = [];
+    let currentPeriod: string[] = [sortedDates[0]];
+    
+    for (let i = 1; i < sortedDates.length; i++) {
+      const currentDate = new Date(sortedDates[i]);
+      const previousDate = new Date(sortedDates[i - 1]);
+      const daysDiff = Math.round((currentDate.getTime() - previousDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff === 1) {
+        // Consecutive day
+        currentPeriod.push(sortedDates[i]);
+      } else {
+        // Gap found, create period from current group
+        if (currentPeriod.length > 0) {
+          periods.push({
+            startDate: currentPeriod[0],
+            endDate: currentPeriod[currentPeriod.length - 1],
+            length: currentPeriod.length
+          });
+        }
+        currentPeriod = [sortedDates[i]];
+      }
+    }
+    
+    // Add the last period
+    if (currentPeriod.length > 0) {
+      periods.push({
+        startDate: currentPeriod[0],
+        endDate: currentPeriod[currentPeriod.length - 1],
+        length: currentPeriod.length
+      });
+    }
+    
+    return periods;
+  };
+  
   const addSelectedPeriods = () => {
     if (selectedDates.length === 0) return;
     
-    const periodLen = parseInt(currentPeriodLength, 10) || 5;
-    const newPeriods = selectedDates.map(date => ({
-      startDate: date,
-      length: periodLen
-    }));
-    
+    const newPeriods = groupConsecutiveDates(selectedDates);
     setHistoricalPeriods(prev => [...prev, ...newPeriods]);
     setSelectedDates([]);
-    setCurrentPeriodLength('5');
   };
   
   const removePeriod = (index: number) => {
@@ -119,10 +154,8 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
     let allPeriods = [...historicalPeriods];
     
     if (selectedDates.length > 0) {
-      const periodLen = parseInt(currentPeriodLength, 10) || 5;
-      selectedDates.forEach(date => {
-        allPeriods.push({ startDate: date, length: periodLen });
-      });
+      const newPeriods = groupConsecutiveDates(selectedDates);
+      allPeriods = [...allPeriods, ...newPeriods];
     }
     
     // Sort periods by date (oldest first)
@@ -243,7 +276,7 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
       <View style={styles.stepContainer}>
         <Text style={styles.stepTitle}>Historical Period Data</Text>
         <Text style={styles.stepDescription}>
-          Select your period start dates from the past 3-6 months. This helps our AI provide more accurate predictions.
+          Select your period dates from the past 3-6 months. Select all consecutive days of each period for accurate tracking.
         </Text>
         
         <View style={styles.calendarContainer}>
@@ -308,23 +341,8 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
               ))}
             </View>
             
-            <View style={styles.periodLengthContainer}>
-              <Text style={styles.inputLabel}>Period length for selected dates:</Text>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  keyboardType="number-pad"
-                  placeholder="5"
-                  placeholderTextColor={colors.subtext}
-                  value={currentPeriodLength}
-                  onChangeText={setCurrentPeriodLength}
-                />
-                <Text style={styles.inputLabel}>days</Text>
-              </View>
-            </View>
-            
             <TouchableOpacity style={styles.addPeriodsButton} onPress={addSelectedPeriods}>
-              <Text style={styles.addPeriodsButtonText}>Add These Periods</Text>
+              <Text style={styles.addPeriodsButtonText}>Add These Period Days</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -369,7 +387,7 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Historical Periods:</Text>
           <Text style={styles.summaryValue}>
-            {historicalPeriods.length + selectedDates.length} periods
+            {historicalPeriods.length + (selectedDates.length > 0 ? groupConsecutiveDates(selectedDates).length : 0)} periods
           </Text>
         </View>
       </View>
@@ -555,12 +573,6 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
       color: '#FFFFFF',
       fontSize: Platform.OS === 'android' ? 16 : 14,
       fontWeight: '500',
-    },
-    periodLengthContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 16,
     },
     addPeriodsButton: {
       backgroundColor: colors.secondary,
