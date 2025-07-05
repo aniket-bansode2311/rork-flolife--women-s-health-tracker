@@ -200,14 +200,6 @@ export class NotificationManager {
 
   // Schedule daily symptom reminder
   private async scheduleSymptomReminder(): Promise<void> {
-    const now = new Date();
-    const reminderTime = new Date();
-    reminderTime.setHours(20, 0, 0, 0); // 8 PM daily
-    
-    if (reminderTime <= now) {
-      reminderTime.setDate(reminderTime.getDate() + 1);
-    }
-
     await this.scheduleRepeatingNotification({
       identifier: NotificationType.SYMPTOM_REMINDER,
       title: '📝 Daily Check-in',
@@ -277,10 +269,14 @@ export class NotificationManager {
           }
         }
       } else {
-        // Native notifications - Use seconds from now for one-time notifications
+        // Native notifications - Use proper TimeIntervalTriggerInput
         const secondsFromNow = Math.floor((options.trigger.getTime() - Date.now()) / 1000);
         
         if (secondsFromNow > 0) {
+          const trigger: Notifications.TimeIntervalTriggerInput = {
+            seconds: secondsFromNow,
+          };
+
           await Notifications.scheduleNotificationAsync({
             identifier: options.identifier,
             content: {
@@ -289,9 +285,7 @@ export class NotificationManager {
               data: options.data,
               sound: true,
             },
-            trigger: {
-              seconds: secondsFromNow,
-            },
+            trigger,
           });
         }
       }
@@ -332,7 +326,13 @@ export class NotificationManager {
           }, timeUntilTrigger);
         }
       } else {
-        // Native repeating notifications - Use daily trigger
+        // Native repeating notifications - Use proper CalendarTriggerInput
+        const trigger: Notifications.CalendarTriggerInput = {
+          hour: options.hour,
+          minute: options.minute,
+          repeats: true,
+        };
+
         await Notifications.scheduleNotificationAsync({
           identifier: options.identifier,
           content: {
@@ -341,11 +341,7 @@ export class NotificationManager {
             data: options.data,
             sound: true,
           },
-          trigger: {
-            hour: options.hour,
-            minute: options.minute,
-            repeats: true,
-          } as any,
+          trigger,
         });
       }
     } catch (error) {
