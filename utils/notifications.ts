@@ -290,6 +290,7 @@ export class NotificationManager {
               sound: true,
             },
             trigger: {
+              type: 'timeInterval',
               seconds: secondsFromNow,
             },
           });
@@ -342,6 +343,7 @@ export class NotificationManager {
             sound: true,
           },
           trigger: {
+            type: 'calendar',
             hour: options.hour,
             minute: options.minute,
             repeats: true,
