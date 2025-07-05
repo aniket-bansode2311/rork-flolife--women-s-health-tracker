@@ -208,36 +208,30 @@ export class NotificationManager {
       reminderTime.setDate(reminderTime.getDate() + 1);
     }
 
-    await this.scheduleNotification({
+    await this.scheduleRepeatingNotification({
       identifier: NotificationType.SYMPTOM_REMINDER,
       title: '📝 Daily Check-in',
       body: 'How are you feeling today? Log your symptoms and mood.',
-      trigger: reminderTime,
-      repeats: true,
+      hour: 20,
+      minute: 0,
       data: { type: NotificationType.SYMPTOM_REMINDER }
     });
   }
 
   // Schedule water reminders
   private async scheduleWaterReminders(): Promise<void> {
-    const now = new Date();
     const startHour = 8; // 8 AM
     const endHour = 22; // 10 PM
     
     for (let hour = startHour; hour <= endHour; hour += this.settings.waterReminderInterval) {
-      const reminderTime = new Date();
-      reminderTime.setHours(hour, 0, 0, 0);
-      
-      if (reminderTime > now) {
-        await this.scheduleNotification({
-          identifier: `${NotificationType.WATER_REMINDER}_${hour}`,
-          title: '💧 Hydration Reminder',
-          body: 'Time to drink some water! Stay hydrated for better health.',
-          trigger: reminderTime,
-          repeats: true,
-          data: { type: NotificationType.WATER_REMINDER }
-        });
-      }
+      await this.scheduleRepeatingNotification({
+        identifier: `${NotificationType.WATER_REMINDER}_${hour}`,
+        title: '💧 Hydration Reminder',
+        body: 'Time to drink some water! Stay hydrated for better health.',
+        hour: hour,
+        minute: 0,
+        data: { type: NotificationType.WATER_REMINDER }
+      });
     }
   }
 
@@ -264,7 +258,6 @@ export class NotificationManager {
     title: string;
     body: string;
     trigger: Date;
-    repeats?: boolean;
     data?: any;
   }): Promise<void> {
     try {
@@ -284,25 +277,62 @@ export class NotificationManager {
           }
         }
       } else {
-        // Native notifications - Fixed for Expo SDK 52
-        let triggerInput: Notifications.NotificationTriggerInput;
+        // Native notifications - Use seconds from now for one-time notifications
+        const secondsFromNow = Math.floor((options.trigger.getTime() - Date.now()) / 1000);
         
-        if (options.repeats) {
-          // For repeating notifications, use calendar trigger
-          triggerInput = {
-            type: 'calendar',
-            hour: options.trigger.getHours(),
-            minute: options.trigger.getMinutes(),
-            repeats: true,
-          };
-        } else {
-          // For one-time notifications, use date trigger
-          triggerInput = {
-            type: 'date',
-            date: options.trigger,
-          };
+        if (secondsFromNow > 0) {
+          await Notifications.scheduleNotificationAsync({
+            identifier: options.identifier,
+            content: {
+              title: options.title,
+              body: options.body,
+              data: options.data,
+              sound: true,
+            },
+            trigger: {
+              seconds: secondsFromNow,
+            },
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error scheduling notification:', error);
+    }
+  }
+
+  // Schedule a repeating notification
+  private async scheduleRepeatingNotification(options: {
+    identifier: string;
+    title: string;
+    body: string;
+    hour: number;
+    minute: number;
+    data?: any;
+  }): Promise<void> {
+    try {
+      if (Platform.OS === 'web') {
+        // Web doesn't support repeating notifications easily
+        // Schedule for next occurrence
+        const nextTrigger = new Date();
+        nextTrigger.setHours(options.hour, options.minute, 0, 0);
+        
+        if (nextTrigger <= new Date()) {
+          nextTrigger.setDate(nextTrigger.getDate() + 1);
         }
 
+        const timeUntilTrigger = nextTrigger.getTime() - Date.now();
+        if (timeUntilTrigger > 0) {
+          setTimeout(() => {
+            new Notification(options.title, {
+              body: options.body,
+              icon: '/icon.png',
+              tag: options.identifier,
+              data: options.data
+            });
+          }, timeUntilTrigger);
+        }
+      } else {
+        // Native repeating notifications
         await Notifications.scheduleNotificationAsync({
           identifier: options.identifier,
           content: {
@@ -311,11 +341,15 @@ export class NotificationManager {
             data: options.data,
             sound: true,
           },
-          trigger: triggerInput,
+          trigger: {
+            hour: options.hour,
+            minute: options.minute,
+            repeats: true,
+          },
         });
       }
     } catch (error) {
-      console.error('Error scheduling notification:', error);
+      console.error('Error scheduling repeating notification:', error);
     }
   }
 
