@@ -289,9 +289,7 @@ export class NotificationManager {
               data: options.data,
               sound: true,
             },
-            trigger: {
-              seconds: secondsFromNow,
-            },
+            trigger: secondsFromNow,
           });
         }
       }
@@ -345,7 +343,7 @@ export class NotificationManager {
             hour: options.hour,
             minute: options.minute,
             repeats: true,
-          },
+          } as any,
         });
       }
     } catch (error) {
