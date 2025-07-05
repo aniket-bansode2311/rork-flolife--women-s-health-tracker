@@ -290,7 +290,6 @@ export class NotificationManager {
               sound: true,
             },
             trigger: {
-              type: 'timeInterval',
               seconds: secondsFromNow,
             },
           });
@@ -333,7 +332,7 @@ export class NotificationManager {
           }, timeUntilTrigger);
         }
       } else {
-        // Native repeating notifications - Use calendar trigger
+        // Native repeating notifications - Use daily trigger
         await Notifications.scheduleNotificationAsync({
           identifier: options.identifier,
           content: {
@@ -343,7 +342,6 @@ export class NotificationManager {
             sound: true,
           },
           trigger: {
-            type: 'calendar',
             hour: options.hour,
             minute: options.minute,
             repeats: true,
