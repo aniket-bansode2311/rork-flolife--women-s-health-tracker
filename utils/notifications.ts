@@ -285,13 +285,21 @@ export class NotificationManager {
         }
       } else {
         // Native notifications - Fixed trigger structure for Expo SDK 52
-        const triggerInput = options.repeats ? {
-          hour: options.trigger.getHours(),
-          minute: options.trigger.getMinutes(),
-          repeats: true,
-        } : {
-          date: options.trigger,
-        };
+        let triggerInput: any;
+        
+        if (options.repeats) {
+          triggerInput = {
+            type: 'calendar' as const,
+            hour: options.trigger.getHours(),
+            minute: options.trigger.getMinutes(),
+            repeats: true,
+          };
+        } else {
+          triggerInput = {
+            type: 'date' as const,
+            date: options.trigger,
+          };
+        }
 
         await Notifications.scheduleNotificationAsync({
           identifier: options.identifier,
