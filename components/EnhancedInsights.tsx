@@ -145,12 +145,24 @@ export default function EnhancedInsights() {
       fontSize: 12,
       color: colors.subtext,
     },
+    cycleDayBadge: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+      marginLeft: 8,
+    },
+    cycleDayText: {
+      color: colors.card,
+      fontSize: 12,
+      fontWeight: '600',
+    },
   });
   
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
-        <Text style={styles.title}>Cycle Insights</Text>
+        <Text style={styles.title}>Enhanced Cycle Insights</Text>
         <Text style={styles.subtitle}>
           AI-powered analysis of your menstrual health patterns
         </Text>
@@ -188,9 +200,14 @@ export default function EnhancedInsights() {
         {enhancedPrediction && (
           <View style={styles.enhancedStats}>
             <View style={styles.phaseIndicator}>
-              <Text style={styles.phaseText}>
-                Current Phase: {enhancedPrediction.cyclePhase.charAt(0).toUpperCase() + enhancedPrediction.cyclePhase.slice(1)}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.phaseText}>
+                  Current Phase: {enhancedPrediction.cyclePhase.charAt(0).toUpperCase() + enhancedPrediction.cyclePhase.slice(1)}
+                </Text>
+                <View style={styles.cycleDayBadge}>
+                  <Text style={styles.cycleDayText}>Day {enhancedPrediction.cycleDay}</Text>
+                </View>
+              </View>
               <Text style={styles.confidenceText}>
                 {Math.round(enhancedPrediction.confidence * 100)}% confidence
               </Text>

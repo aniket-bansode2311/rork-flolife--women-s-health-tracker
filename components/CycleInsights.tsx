@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { usePeriodStore } from '@/store/periodStore';
 import { useTheme } from '@/hooks/useTheme';
-import { getCyclePhase, formatDate, predictNextPeriod, daysBetween } from '@/utils/dateUtils';
+import { getCyclePhase, getCycleDay, formatDate, predictNextPeriod, daysBetween } from '@/utils/dateUtils';
+import { generateEnhancedPrediction } from '@/utils/enhancedPredictions';
 import { generateAIPredictions, getAIInsightsSummary } from '@/utils/aiPredictions';
 import { InsightCard } from './insights/InsightCard';
 import { StatRow } from './insights/StatRow';
@@ -18,15 +19,24 @@ export default function CycleInsights() {
 
     const today = new Date();
     const lastPeriodDate = new Date(profile.lastPeriodStart);
-    const daysSinceLastPeriod = daysBetween(today, lastPeriodDate);
+    const daysSinceLastPeriod = daysBetween(lastPeriodDate, today);
 
-    const cyclePhase = getCyclePhase(
+    // Use enhanced predictions for more accurate phase calculation
+    const enhancedPrediction = generateEnhancedPrediction(logs, cycles, profile);
+    
+    // Fallback to basic calculation if enhanced prediction fails
+    const cyclePhase = enhancedPrediction?.cyclePhase || getCyclePhase(
       profile.lastPeriodStart,
       profile.cycleAvgLength,
       profile.periodAvgLength
     );
 
-    const nextPeriodDate = predictNextPeriod(
+    const cycleDay = enhancedPrediction?.cycleDay || getCycleDay(
+      profile.lastPeriodStart,
+      profile.cycleAvgLength
+    );
+
+    const nextPeriodDate = enhancedPrediction?.nextPeriodDate || predictNextPeriod(
       profile.lastPeriodStart,
       profile.cycleAvgLength
     );
@@ -36,18 +46,15 @@ export default function CycleInsights() {
     const aiPredictions = generateAIPredictions(logs, cycles, profile);
     const aiSummary = getAIInsightsSummary(logs, cycles, profile);
 
-    const cycleLengthPrediction = aiPredictions.find(p => p.type === 'cycle_length');
-    const predictedCycleLength = cycleLengthPrediction?.prediction || profile.cycleAvgLength;
-
     return {
       cyclePhase,
+      cycleDay,
       nextPeriodDate,
       daysUntilNextPeriod,
       daysSinceLastPeriod,
       aiPredictions,
       aiSummary,
-      predictedCycleLength,
-      cycleLengthPrediction,
+      enhancedPrediction,
     };
   }, [profile, logs, cycles]);
 
@@ -72,12 +79,12 @@ export default function CycleInsights() {
 
   const {
     cyclePhase,
+    cycleDay,
     nextPeriodDate,
     daysUntilNextPeriod,
     daysSinceLastPeriod,
     aiSummary,
-    predictedCycleLength,
-    cycleLengthPrediction,
+    enhancedPrediction,
   } = insights;
 
   const getPhaseDescription = () => {
@@ -124,11 +131,11 @@ export default function CycleInsights() {
 
   const stats = [
     {
-      value: cycleLengthPrediction && cycleLengthPrediction.confidence > 0.7 
-        ? predictedCycleLength 
-        : profile.cycleAvgLength,
-      label: cycleLengthPrediction && cycleLengthPrediction.confidence > 0.7 
-        ? 'Predicted Cycle' 
+      value: enhancedPrediction?.confidence && enhancedPrediction.confidence > 0.7 
+        ? `${Math.round(enhancedPrediction.confidence * 100)}%`
+        : `${profile.cycleAvgLength} days`,
+      label: enhancedPrediction?.confidence && enhancedPrediction.confidence > 0.7 
+        ? 'Prediction Confidence' 
         : 'Avg Cycle Length'
     },
     {
@@ -152,6 +159,12 @@ export default function CycleInsights() {
       backgroundColor: colors.background,
       borderRadius: 12,
     },
+    phaseHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
     phaseLabel: {
       fontSize: 14,
       color: colors.subtext,
@@ -162,6 +175,18 @@ export default function CycleInsights() {
       fontWeight: '600',
       marginBottom: 8,
       color: getPhaseColor(),
+    },
+    cycleDayContainer: {
+      backgroundColor: colors.card,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+      alignSelf: 'flex-start',
+    },
+    cycleDayText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.text,
     },
     phaseDescription: {
       fontSize: 14,
@@ -221,16 +246,23 @@ export default function CycleInsights() {
   return (
     <InsightCard title="Cycle Insights">
       <View style={styles.phaseContainer}>
-        <Text style={styles.phaseLabel}>Current Phase</Text>
-        <Text style={styles.phaseValue}>
-          {cyclePhase.charAt(0).toUpperCase() + cyclePhase.slice(1)}
-        </Text>
+        <View style={styles.phaseHeader}>
+          <View>
+            <Text style={styles.phaseLabel}>Current Phase</Text>
+            <Text style={styles.phaseValue}>
+              {cyclePhase.charAt(0).toUpperCase() + cyclePhase.slice(1)}
+            </Text>
+          </View>
+          <View style={styles.cycleDayContainer}>
+            <Text style={styles.cycleDayText}>Day {cycleDay}</Text>
+          </View>
+        </View>
         <Text style={styles.phaseDescription}>{getPhaseDescription()}</Text>
       </View>
 
       <View style={styles.daysSinceContainer}>
         <Text style={styles.daysSinceLabel}>Days since last period</Text>
-        <Text style={styles.daysSinceValue}>Day {daysSinceLastPeriod}</Text>
+        <Text style={styles.daysSinceValue}>{daysSinceLastPeriod} days</Text>
       </View>
 
       <StatRow stats={stats} />
@@ -238,10 +270,10 @@ export default function CycleInsights() {
       <View style={styles.aiInsightsContainer}>
         <Text style={styles.aiTitle}>AI Insights</Text>
         <Text style={styles.aiSummary}>{aiSummary}</Text>
-        {cycleLengthPrediction && cycleLengthPrediction.confidence > 0.7 && (
+        {enhancedPrediction && enhancedPrediction.confidence > 0.7 && (
           <View style={styles.predictionBadge}>
             <Text style={styles.predictionBadgeText}>
-              {Math.round(cycleLengthPrediction.confidence * 100)}% confidence
+              {Math.round(enhancedPrediction.confidence * 100)}% confidence
             </Text>
           </View>
         )}

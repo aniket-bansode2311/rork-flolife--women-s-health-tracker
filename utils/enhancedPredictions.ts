@@ -13,6 +13,7 @@ export interface PredictionResult {
   };
   cyclePhase: 'period' | 'follicular' | 'ovulation' | 'luteal';
   irregularityScore: number; // 0-1, higher means more irregular
+  cycleDay: number; // Current day in cycle (1-based)
 }
 
 export interface CyclePrediction {
@@ -217,28 +218,81 @@ export const calculateCyclePhase = (
 ): 'period' | 'follicular' | 'ovulation' | 'luteal' => {
   const today = new Date();
   const lastPeriod = new Date(lastPeriodStart);
-  const daysSinceLastPeriod = daysBetween(today, lastPeriod);
+  const daysSinceLastPeriod = daysBetween(lastPeriod, today);
   
-  // Period phase
-  if (daysSinceLastPeriod <= avgPeriodLength) {
+  // Handle negative days (shouldn't happen, but be safe)
+  if (daysSinceLastPeriod < 0) {
+    return 'luteal';
+  }
+  
+  // If we're past the expected cycle length, we might be in the next cycle
+  if (daysSinceLastPeriod >= predictedCycleLength) {
+    // Calculate how many cycles we might be ahead
+    const cyclesPassed = Math.floor(daysSinceLastPeriod / predictedCycleLength);
+    const adjustedDaysSince = daysSinceLastPeriod - (cyclesPassed * predictedCycleLength);
+    
+    // Check if we're in the period phase of a new cycle
+    if (adjustedDaysSince < avgPeriodLength) {
+      return 'period';
+    }
+    
+    // Calculate phase based on adjusted days
+    const ovulationDay = predictedCycleLength - 14; // Ovulation typically 14 days before next period
+    
+    if (adjustedDaysSince < ovulationDay - 3) {
+      return 'follicular';
+    }
+    
+    if (adjustedDaysSince >= ovulationDay - 3 && adjustedDaysSince <= ovulationDay + 1) {
+      return 'ovulation';
+    }
+    
+    return 'luteal';
+  }
+  
+  // Period phase (days 1-avgPeriodLength)
+  if (daysSinceLastPeriod < avgPeriodLength) {
     return 'period';
   }
   
   // Calculate ovulation day (14 days before next period)
   const ovulationDay = predictedCycleLength - 14;
   
-  // Follicular phase (after period, before ovulation)
-  if (daysSinceLastPeriod < ovulationDay - 2) {
+  // Follicular phase (after period, before ovulation window)
+  if (daysSinceLastPeriod < ovulationDay - 3) {
     return 'follicular';
   }
   
-  // Ovulation phase (2 days before to 2 days after ovulation)
-  if (daysSinceLastPeriod >= ovulationDay - 2 && daysSinceLastPeriod <= ovulationDay + 2) {
+  // Ovulation phase (3 days before to 1 day after ovulation)
+  if (daysSinceLastPeriod >= ovulationDay - 3 && daysSinceLastPeriod <= ovulationDay + 1) {
     return 'ovulation';
   }
   
   // Luteal phase (after ovulation, before next period)
   return 'luteal';
+};
+
+// Calculate current cycle day
+export const calculateCycleDay = (
+  lastPeriodStart: string,
+  predictedCycleLength: number
+): number => {
+  const today = new Date();
+  const lastPeriod = new Date(lastPeriodStart);
+  const daysSinceLastPeriod = daysBetween(lastPeriod, today);
+  
+  if (daysSinceLastPeriod < 0) {
+    return 1; // Default to day 1 if calculation is invalid
+  }
+  
+  // If we're past the expected cycle length, calculate the current cycle day
+  if (daysSinceLastPeriod >= predictedCycleLength) {
+    const cyclesPassed = Math.floor(daysSinceLastPeriod / predictedCycleLength);
+    const adjustedDaysSince = daysSinceLastPeriod - (cyclesPassed * predictedCycleLength);
+    return adjustedDaysSince + 1; // +1 because cycle days are 1-based
+  }
+  
+  return daysSinceLastPeriod + 1; // +1 because cycle days are 1-based
 };
 
 // Calculate irregularity score based on cycle variation
@@ -286,6 +340,12 @@ export const generateEnhancedPrediction = (
     profile.periodAvgLength
   );
   
+  // Calculate current cycle day
+  const cycleDay = calculateCycleDay(
+    profile.lastPeriodStart,
+    cyclePrediction.predictedLength
+  );
+  
   // Calculate irregularity score
   const irregularityScore = calculateIrregularityScore(cycles);
   
@@ -298,7 +358,8 @@ export const generateEnhancedPrediction = (
       ovulationDate: fertilityWindow.ovulationDate
     },
     cyclePhase,
-    irregularityScore
+    irregularityScore,
+    cycleDay
   };
 };
 

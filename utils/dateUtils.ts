@@ -20,11 +20,16 @@ export const isoToDate = (isoString: string): Date => {
   return new Date(isoString);
 };
 
-// Calculate days between two dates
+// Calculate days between two dates (signed difference - positive if date2 is after date1)
 export const daysBetween = (date1: Date, date2: Date): number => {
   const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
-  const diffDays = Math.round(Math.abs((date1.getTime() - date2.getTime()) / oneDay));
+  const diffDays = Math.round((date2.getTime() - date1.getTime()) / oneDay);
   return diffDays;
+};
+
+// Calculate absolute days between two dates
+export const absoluteDaysBetween = (date1: Date, date2: Date): number => {
+  return Math.abs(daysBetween(date1, date2));
 };
 
 // Get date X days from a given date
@@ -159,23 +164,82 @@ export const getCyclePhase = (
 ): 'period' | 'follicular' | 'ovulation' | 'luteal' => {
   const today = new Date();
   const lastPeriod = new Date(lastPeriodStart);
-  const daysSinceLastPeriod = daysBetween(today, lastPeriod);
+  const daysSinceLastPeriod = daysBetween(lastPeriod, today);
   
+  // If we're past the expected cycle length, we might be in the next cycle
+  if (daysSinceLastPeriod >= avgCycleLength) {
+    // Calculate how many cycles we might be ahead
+    const cyclesPassed = Math.floor(daysSinceLastPeriod / avgCycleLength);
+    const adjustedDaysSince = daysSinceLastPeriod - (cyclesPassed * avgCycleLength);
+    
+    // Check if we're in the period phase of a new cycle
+    if (adjustedDaysSince < avgPeriodLength) {
+      return 'period';
+    }
+    
+    // Calculate phase based on adjusted days
+    const ovulationDay = avgCycleLength - 14; // Ovulation typically 14 days before next period
+    
+    if (adjustedDaysSince < ovulationDay - 3) {
+      return 'follicular';
+    }
+    
+    if (adjustedDaysSince >= ovulationDay - 3 && adjustedDaysSince <= ovulationDay + 1) {
+      return 'ovulation';
+    }
+    
+    return 'luteal';
+  }
+  
+  // Normal cycle progression
+  if (daysSinceLastPeriod < 0) {
+    // This shouldn't happen, but handle gracefully
+    return 'luteal';
+  }
+  
+  // Period phase (days 1-avgPeriodLength)
   if (daysSinceLastPeriod < avgPeriodLength) {
     return 'period';
   }
   
-  const ovulationDay = Math.round(avgCycleLength - 14);
+  // Calculate ovulation day (typically 14 days before next period)
+  const ovulationDay = avgCycleLength - 14;
   
-  if (daysSinceLastPeriod < ovulationDay - 2) {
+  // Follicular phase (after period, before ovulation window)
+  if (daysSinceLastPeriod < ovulationDay - 3) {
     return 'follicular';
   }
   
-  if (daysSinceLastPeriod >= ovulationDay - 2 && daysSinceLastPeriod <= ovulationDay + 2) {
+  // Ovulation phase (3 days before to 1 day after calculated ovulation)
+  if (daysSinceLastPeriod >= ovulationDay - 3 && daysSinceLastPeriod <= ovulationDay + 1) {
     return 'ovulation';
   }
   
+  // Luteal phase (after ovulation, before next period)
   return 'luteal';
+};
+
+// Get cycle day (1-based, where 1 is the first day of period)
+export const getCycleDay = (
+  lastPeriodStart: string,
+  avgCycleLength: number
+): number => {
+  const today = new Date();
+  const lastPeriod = new Date(lastPeriodStart);
+  const daysSinceLastPeriod = daysBetween(lastPeriod, today);
+  
+  if (daysSinceLastPeriod < 0) {
+    return 1; // Default to day 1 if calculation is invalid
+  }
+  
+  // If we're past the expected cycle length, calculate the current cycle day
+  if (daysSinceLastPeriod >= avgCycleLength) {
+    const cyclesPassed = Math.floor(daysSinceLastPeriod / avgCycleLength);
+    const adjustedDaysSince = daysSinceLastPeriod - (cyclesPassed * avgCycleLength);
+    return adjustedDaysSince + 1; // +1 because cycle days are 1-based
+  }
+  
+  return daysSinceLastPeriod + 1; // +1 because cycle days are 1-based
 };
 
 // Generate dates for a month view calendar
