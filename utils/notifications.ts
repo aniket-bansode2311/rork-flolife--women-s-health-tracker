@@ -290,6 +290,7 @@ export class NotificationManager {
         if (options.repeats) {
           // For repeating notifications, use calendar trigger
           triggerInput = {
+            type: 'calendar',
             hour: options.trigger.getHours(),
             minute: options.trigger.getMinutes(),
             repeats: true,
@@ -297,6 +298,7 @@ export class NotificationManager {
         } else {
           // For one-time notifications, use date trigger
           triggerInput = {
+            type: 'date',
             date: options.trigger,
           };
         }
