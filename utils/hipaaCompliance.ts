@@ -256,7 +256,7 @@ export class HIPAASecureStorage {
         dataType: this.getDataTypeFromKey(key),
         action: 'read',
         userId,
-        sessionId: await HIPAASecureStorage['getCurrentSessionId']()
+        sessionId: await this.getCurrentSessionId()
       });
 
       return JSON.parse(jsonValue);
@@ -277,7 +277,7 @@ export class HIPAASecureStorage {
         dataType: this.getDataTypeFromKey(key),
         action: 'delete',
         userId,
-        sessionId: await HIPAASecureStorage['getCurrentSessionId']()
+        sessionId: await this.getCurrentSessionId()
       });
     } catch (error) {
       console.error('Secure removal failed:', error);
@@ -357,7 +357,7 @@ export class HIPAADataRetention {
         dataType: 'period_logs',
         action: 'export',
         userId,
-        sessionId: await HIPAASecureStorage['getCurrentSessionId']()
+        sessionId: 'export_session'
       });
 
       return {

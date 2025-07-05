@@ -250,35 +250,50 @@ export class TelehealthService {
 
     // Check for high-risk conditions
     if (clinicalPrediction.riskAssessment.pcos > 0.7) {
-      recommended.push(this.CONSULTATION_TYPES.find(t => t.id === 'pcos_evaluation')!);
-      reasons.push('High PCOS risk indicators detected');
-      urgency = 'high';
+      const pcosConsult = this.CONSULTATION_TYPES.find(t => t.id === 'pcos_evaluation');
+      if (pcosConsult) {
+        recommended.push(pcosConsult);
+        reasons.push('High PCOS risk indicators detected');
+        urgency = 'high';
+      }
     }
 
     if (clinicalPrediction.riskAssessment.endometriosis > 0.6) {
-      recommended.push(this.CONSULTATION_TYPES.find(t => t.id === 'endometriosis_consult')!);
-      reasons.push('Endometriosis symptoms pattern identified');
-      urgency = urgency === 'low' ? 'medium' : urgency;
+      const endoConsult = this.CONSULTATION_TYPES.find(t => t.id === 'endometriosis_consult');
+      if (endoConsult) {
+        recommended.push(endoConsult);
+        reasons.push('Endometriosis symptoms pattern identified');
+        urgency = urgency === 'low' ? 'medium' : urgency;
+      }
     }
 
     if (clinicalPrediction.riskAssessment.thyroidIssues > 0.5) {
-      recommended.push(this.CONSULTATION_TYPES.find(t => t.id === 'hormone_therapy')!);
-      reasons.push('Thyroid dysfunction indicators present');
-      urgency = urgency === 'low' ? 'medium' : urgency;
+      const hormoneConsult = this.CONSULTATION_TYPES.find(t => t.id === 'hormone_therapy');
+      if (hormoneConsult) {
+        recommended.push(hormoneConsult);
+        reasons.push('Thyroid dysfunction indicators present');
+        urgency = urgency === 'low' ? 'medium' : urgency;
+      }
     }
 
     // Check for cycle irregularities
     if (clinicalPrediction.cycleRegularity === 'highly_irregular') {
-      recommended.push(this.CONSULTATION_TYPES.find(t => t.id === 'routine_gyneco')!);
-      reasons.push('Significant cycle irregularity requires evaluation');
-      urgency = urgency === 'low' ? 'medium' : urgency;
+      const routineConsult = this.CONSULTATION_TYPES.find(t => t.id === 'routine_gyneco');
+      if (routineConsult) {
+        recommended.push(routineConsult);
+        reasons.push('Significant cycle irregularity requires evaluation');
+        urgency = urgency === 'low' ? 'medium' : urgency;
+      }
     }
 
     // Check for fertility concerns
     if (clinicalPrediction.fertilityScore < 50) {
-      recommended.push(this.CONSULTATION_TYPES.find(t => t.id === 'fertility_consult')!);
-      reasons.push('Multiple fertility risk factors identified');
-      urgency = urgency === 'low' ? 'medium' : urgency;
+      const fertilityConsult = this.CONSULTATION_TYPES.find(t => t.id === 'fertility_consult');
+      if (fertilityConsult) {
+        recommended.push(fertilityConsult);
+        reasons.push('Multiple fertility risk factors identified');
+        urgency = urgency === 'low' ? 'medium' : urgency;
+      }
     }
 
     // Check for urgent symptoms
@@ -299,15 +314,21 @@ export class TelehealthService {
     );
 
     if (urgentSymptoms.length > 0) {
-      recommended.unshift(this.CONSULTATION_TYPES.find(t => t.id === 'urgent_consult')!);
-      reasons.unshift('Urgent symptoms require immediate medical attention');
-      urgency = 'urgent';
+      const urgentConsult = this.CONSULTATION_TYPES.find(t => t.id === 'urgent_consult');
+      if (urgentConsult) {
+        recommended.unshift(urgentConsult);
+        reasons.unshift('Urgent symptoms require immediate medical attention');
+        urgency = 'urgent';
+      }
     }
 
     // Default recommendation for routine care
     if (recommended.length === 0) {
-      recommended.push(this.CONSULTATION_TYPES.find(t => t.id === 'routine_gyneco')!);
-      reasons.push('Regular reproductive health check-up recommended');
+      const routineConsult = this.CONSULTATION_TYPES.find(t => t.id === 'routine_gyneco');
+      if (routineConsult) {
+        recommended.push(routineConsult);
+        reasons.push('Regular reproductive health check-up recommended');
+      }
     }
 
     return { recommended, urgency, reasons };
