@@ -288,15 +288,19 @@ export class NotificationManager {
         let triggerInput: Notifications.NotificationTriggerInput;
         
         if (options.repeats) {
-          // For repeating notifications, use daily trigger
+          // For repeating notifications, use calendar trigger
           triggerInput = {
+            type: 'calendar',
             hour: options.trigger.getHours(),
             minute: options.trigger.getMinutes(),
             repeats: true,
           };
         } else {
           // For one-time notifications, use date trigger
-          triggerInput = options.trigger;
+          triggerInput = {
+            type: 'date',
+            date: options.trigger,
+          };
         }
 
         await Notifications.scheduleNotificationAsync({
