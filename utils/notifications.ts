@@ -343,7 +343,7 @@ export class NotificationManager {
             hour: options.hour,
             minute: options.minute,
             repeats: true,
-          } as any,
+          },
         });
       }
     } catch (error) {
