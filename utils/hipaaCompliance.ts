@@ -410,7 +410,7 @@ export class HIPAASessionManager {
       const sessionId = await AsyncStorage.getItem('current_session_id');
 
       if (userId) {
-        await HIPAAAuditLogger.logAuthEvent(userId, 'logout', true, `Session: ${sessionId}`);
+        await HIPAAAuditLogger.logAuthEvent(userId, 'logout', true, `Session: ${sessionId || 'unknown'}`);
       }
 
       await AsyncStorage.removeItem('current_session_id');
