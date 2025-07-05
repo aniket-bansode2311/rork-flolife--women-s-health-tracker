@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Cyclix",
-    "slug": "frolife-womens-health-tracker",
+    "slug": "cyclix-womens-health-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
