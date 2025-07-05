@@ -6,12 +6,16 @@ import { useTheme } from '@/hooks/useTheme';
 import symptoms from '@/constants/symptoms';
 import moods from '@/constants/moods';
 import { predictCycleIrregularities, getPredictionAccuracy } from '@/utils/mlPredictions';
-import { AlertTriangle } from 'lucide-react-native';
+import AdvancedClinicalInsights from '@/components/AdvancedClinicalInsights';
+import TelehealthBooking from '@/components/TelehealthBooking';
+import AISymptomAnalysis from '@/components/AISymptomAnalysis';
+import { AlertTriangle, Stethoscope, Brain } from 'lucide-react-native';
 
 export default function InsightsScreen() {
   const { colors } = useTheme();
   const { logs, cycles, profile } = usePeriodStore();
   const [activeTab, setActiveTab] = useState('cycle');
+  const [showTelehealthBooking, setShowTelehealthBooking] = useState(false);
   
   // Get ML predictions
   const predictions = predictCycleIrregularities(logs, cycles);
@@ -65,6 +69,7 @@ export default function InsightsScreen() {
       flex: 1,
       paddingVertical: 16,
       alignItems: 'center',
+      minWidth: 80,
     },
     activeTab: {
       borderBottomWidth: 2,
@@ -706,6 +711,24 @@ export default function InsightsScreen() {
             AI Analysis
           </Text>
         </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'clinical' && styles.activeTab]}
+          onPress={() => setActiveTab('clinical')}
+        >
+          <Text style={[styles.tabText, activeTab === 'clinical' && styles.activeTabText]}>
+            Clinical
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'ai' && styles.activeTab]}
+          onPress={() => setActiveTab('ai')}
+        >
+          <Text style={[styles.tabText, activeTab === 'ai' && styles.activeTabText]}>
+            AI Analysis
+          </Text>
+        </TouchableOpacity>
       </View>
       
       <ScrollView style={styles.scrollView}>
@@ -713,7 +736,14 @@ export default function InsightsScreen() {
         {activeTab === 'symptoms' && renderSymptomsTab()}
         {activeTab === 'moods' && renderMoodsTab()}
         {activeTab === 'predictions' && renderPredictionsTab()}
+        {activeTab === 'clinical' && <AdvancedClinicalInsights />}
+        {activeTab === 'ai' && <AISymptomAnalysis />}
       </ScrollView>
+      
+      <TelehealthBooking 
+        visible={showTelehealthBooking}
+        onClose={() => setShowTelehealthBooking(false)}
+      />
     </View>
   );
 }

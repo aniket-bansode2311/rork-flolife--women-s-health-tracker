@@ -1,14 +1,16 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert, ScrollView, Share, Platform, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert, ScrollView, Share, Platform, Linking, Modal } from 'react-native';
 import { Stack } from 'expo-router';
 import { usePeriodStore } from '@/store/periodStore';
 import { useTheme } from '@/hooks/useTheme';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
-import { ChevronRight, Info, Download, Shield, ExternalLink } from 'lucide-react-native';
+import { ChevronRight, Info, Download, Shield, ExternalLink, Lock } from 'lucide-react-native';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ConsentManagement } from '@/components/ConsentManagement';
+import SecurityDashboard from '@/components/SecurityDashboard';
+import MedicalReportViewer from '@/components/MedicalReportViewer';
 import { validateCycleLength, validatePeriodLength } from '@/utils/validation';
 import { APP_CONFIG } from '@/constants/app';
 import * as FileSystem from 'expo-file-system';
@@ -20,6 +22,8 @@ export default function SettingsScreen() {
   const [periodLength, setPeriodLength] = useState(profile.periodAvgLength.toString());
   const [notifications, setNotifications] = useState(true);
   const [showConsentManagement, setShowConsentManagement] = useState(false);
+  const [showSecurityDashboard, setShowSecurityDashboard] = useState(false);
+  const [showMedicalReport, setShowMedicalReport] = useState(false);
   
   const { isLoading: isExporting, execute: executeExport } = useAsyncOperation();
 
@@ -140,6 +144,14 @@ export default function SettingsScreen() {
 
   const handleConsentManagement = useCallback(() => {
     setShowConsentManagement(true);
+  }, []);
+
+  const handleSecurityDashboard = useCallback(() => {
+    setShowSecurityDashboard(true);
+  }, []);
+
+  const handleMedicalReport = useCallback(() => {
+    setShowMedicalReport(true);
   }, []);
 
   const styles = StyleSheet.create({
@@ -322,6 +334,16 @@ export default function SettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Data Management</Text>
 
+        <TouchableOpacity style={styles.menuItem} onPress={handleMedicalReport}>
+          <View style={styles.menuItemContent}>
+            <View style={styles.exportButton}>
+              <Info size={20} color={colors.secondary} style={{ marginRight: 8 }} />
+              <Text style={styles.menuItemText}>Medical Report</Text>
+            </View>
+            <ChevronRight size={20} color={colors.subtext} />
+          </View>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.menuItem}
           onPress={handleExportData}
@@ -333,6 +355,16 @@ export default function SettingsScreen() {
                 {isExporting ? 'Exporting...' : 'Export Data'}
               </Text>
               <Download size={20} color={colors.secondary} />
+            </View>
+            <ChevronRight size={20} color={colors.subtext} />
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.menuItem} onPress={handleSecurityDashboard}>
+          <View style={styles.menuItemContent}>
+            <View style={styles.exportButton}>
+              <Lock size={20} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.menuItemText}>Security & HIPAA</Text>
             </View>
             <ChevronRight size={20} color={colors.subtext} />
           </View>
@@ -388,6 +420,45 @@ export default function SettingsScreen() {
           overlay
         />
       )}
+
+      <Modal 
+        visible={showSecurityDashboard} 
+        animationType="slide" 
+        presentationStyle="pageSheet"
+      >
+        <View style={{ flex: 1 }}>
+          <View style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: 16,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            backgroundColor: colors.background
+          }}>
+            <Text style={{
+              fontSize: 20,
+              fontWeight: '600',
+              color: colors.text
+            }}>Security Dashboard</Text>
+            <TouchableOpacity onPress={() => setShowSecurityDashboard(false)}>
+              <Text style={{ color: colors.primary, fontSize: 16 }}>Done</Text>
+            </TouchableOpacity>
+          </View>
+          <SecurityDashboard />
+        </View>
+      </Modal>
+
+      <Modal 
+        visible={showMedicalReport} 
+        animationType="slide" 
+        presentationStyle="fullScreen"
+      >
+        <MedicalReportViewer 
+          visible={showMedicalReport}
+          onClose={() => setShowMedicalReport(false)}
+        />
+      </Modal>
 
       {showConsentManagement && (
         <View style={StyleSheet.absoluteFill}>
