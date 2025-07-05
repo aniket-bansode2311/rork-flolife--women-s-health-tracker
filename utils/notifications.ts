@@ -333,7 +333,7 @@ export class NotificationManager {
           }, timeUntilTrigger);
         }
       } else {
-        // Native repeating notifications - Use daily trigger
+        // Native repeating notifications - Use calendar trigger
         await Notifications.scheduleNotificationAsync({
           identifier: options.identifier,
           content: {
