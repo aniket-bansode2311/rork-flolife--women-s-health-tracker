@@ -29,70 +29,6 @@ export default function AdvancedClinicalInsights() {
     };
   }, [profile, logs, cycles]);
 
-  if (!clinicalAnalysis) {
-    return (
-      <InsightCard title="Clinical Insights">
-        <View style={styles.emptyContainer}>
-          <Activity size={48} color={colors.subtext} />
-          <Text style={[styles.emptyText, { color: colors.subtext }]}>
-            Track your cycles to unlock advanced clinical insights
-          </Text>
-        </View>
-      </InsightCard>
-    );
-  }
-
-  const { clinicalPrediction, symptomPatterns, telehealthRecommendations } = clinicalAnalysis;
-
-  const getRiskColor = (risk: number) => {
-    if (risk < 0.3) return colors.success;
-    if (risk < 0.6) return colors.warning;
-    return colors.error;
-  };
-
-  const getRiskLevel = (risk: number) => {
-    if (risk < 0.3) return 'Low';
-    if (risk < 0.6) return 'Moderate';
-    return 'High';
-  };
-
-  const getUrgencyColor = (urgency: string) => {
-    switch (urgency) {
-      case 'low': return colors.success;
-      case 'medium': return colors.warning;
-      case 'high': return colors.error;
-      case 'urgent': return '#FF0000';
-      default: return colors.text;
-    }
-  };
-
-  const handleScheduleConsultation = async () => {
-    try {
-      const providers = await TelehealthService.findProviders({
-        telemedicineOnly: true,
-        specialty: 'gynecology'
-      });
-
-      if (providers.length > 0) {
-        Alert.alert(
-          'Telehealth Consultation',
-          `Found ${providers.length} available providers. Would you like to schedule a consultation?`,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Schedule', onPress: () => {
-              // Navigate to scheduling screen
-              console.log('Navigate to telehealth scheduling');
-            }}
-          ]
-        );
-      } else {
-        Alert.alert('No Providers Available', 'No telehealth providers are currently available in your area.');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Unable to find healthcare providers at this time.');
-    }
-  };
-
   const styles = StyleSheet.create({
     container: {
       gap: 16,
@@ -321,12 +257,76 @@ export default function AdvancedClinicalInsights() {
     },
   });
 
+  if (!clinicalAnalysis) {
+    return (
+      <InsightCard title="Clinical Insights">
+        <View style={styles.emptyContainer}>
+          <Activity size={48} color={colors.subtext} />
+          <Text style={[styles.emptyText, { color: colors.subtext }]}>
+            Track your cycles to unlock advanced clinical insights
+          </Text>
+        </View>
+      </InsightCard>
+    );
+  }
+
+  const { clinicalPrediction, symptomPatterns, telehealthRecommendations } = clinicalAnalysis;
+
+  const getRiskColor = (risk: number) => {
+    if (risk < 0.3) return colors.success;
+    if (risk < 0.6) return colors.warning;
+    return colors.error;
+  };
+
+  const getRiskLevel = (risk: number) => {
+    if (risk < 0.3) return 'Low';
+    if (risk < 0.6) return 'Moderate';
+    return 'High';
+  };
+
+  const getUrgencyColor = (urgency: string) => {
+    switch (urgency) {
+      case 'low': return colors.success;
+      case 'medium': return colors.warning;
+      case 'high': return colors.error;
+      case 'urgent': return '#FF0000';
+      default: return colors.text;
+    }
+  };
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'mild': return colors.success;
       case 'moderate': return colors.warning;
       case 'severe': return colors.error;
       default: return colors.subtext;
+    }
+  };
+
+  const handleScheduleConsultation = async () => {
+    try {
+      const providers = await TelehealthService.findProviders({
+        telemedicineOnly: true,
+        specialty: 'gynecology'
+      });
+
+      if (providers.length > 0) {
+        Alert.alert(
+          'Telehealth Consultation',
+          `Found ${providers.length} available providers. Would you like to schedule a consultation?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Schedule', onPress: () => {
+              // Navigate to scheduling screen
+              console.log('Navigate to telehealth scheduling');
+            }}
+          ]
+        );
+      } else {
+        Alert.alert('No Providers Available', 'No telehealth providers are currently available in your area.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Unable to find healthcare providers at this time.');
     }
   };
 

@@ -258,27 +258,27 @@ export class TelehealthService {
     if (clinicalPrediction.riskAssessment.endometriosis > 0.6) {
       recommended.push(this.CONSULTATION_TYPES.find(t => t.id === 'endometriosis_consult')!);
       reasons.push('Endometriosis symptoms pattern identified');
-      urgency = Math.max(urgency === 'low' ? 'medium' : urgency, 'medium') as any;
+      urgency = urgency === 'low' ? 'medium' : urgency;
     }
 
     if (clinicalPrediction.riskAssessment.thyroidIssues > 0.5) {
       recommended.push(this.CONSULTATION_TYPES.find(t => t.id === 'hormone_therapy')!);
       reasons.push('Thyroid dysfunction indicators present');
-      urgency = Math.max(urgency === 'low' ? 'medium' : urgency, 'medium') as any;
+      urgency = urgency === 'low' ? 'medium' : urgency;
     }
 
     // Check for cycle irregularities
     if (clinicalPrediction.cycleRegularity === 'highly_irregular') {
       recommended.push(this.CONSULTATION_TYPES.find(t => t.id === 'routine_gyneco')!);
       reasons.push('Significant cycle irregularity requires evaluation');
-      urgency = Math.max(urgency === 'low' ? 'medium' : urgency, 'medium') as any;
+      urgency = urgency === 'low' ? 'medium' : urgency;
     }
 
     // Check for fertility concerns
     if (clinicalPrediction.fertilityScore < 50) {
       recommended.push(this.CONSULTATION_TYPES.find(t => t.id === 'fertility_consult')!);
       reasons.push('Multiple fertility risk factors identified');
-      urgency = Math.max(urgency === 'low' ? 'medium' : urgency, 'medium') as any;
+      urgency = urgency === 'low' ? 'medium' : urgency;
     }
 
     // Check for urgent symptoms
