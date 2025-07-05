@@ -284,7 +284,7 @@ export class NotificationManager {
           }
         }
       } else {
-        // Native notifications - Fixed trigger structure for Expo SDK 52
+        // Native notifications - Fixed for Expo SDK 52
         let triggerInput: Notifications.NotificationTriggerInput;
         
         if (options.repeats) {
