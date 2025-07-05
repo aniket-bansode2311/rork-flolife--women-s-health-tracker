@@ -269,12 +269,11 @@ export class NotificationManager {
           }
         }
       } else {
-        // Native notifications - Use proper TimeIntervalTriggerInput with enum value
+        // Native notifications - Use proper TimeIntervalTriggerInput
         const secondsFromNow = Math.floor((options.trigger.getTime() - Date.now()) / 1000);
         
         if (secondsFromNow > 0) {
           const trigger: Notifications.TimeIntervalTriggerInput = {
-            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
             seconds: secondsFromNow,
             repeats: false,
           };
@@ -328,9 +327,8 @@ export class NotificationManager {
           }, timeUntilTrigger);
         }
       } else {
-        // Native repeating notifications - Use proper CalendarTriggerInput with enum value
+        // Native repeating notifications - Use proper CalendarTriggerInput
         const trigger: Notifications.CalendarTriggerInput = {
-          type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
           hour: options.hour,
           minute: options.minute,
           repeats: true,

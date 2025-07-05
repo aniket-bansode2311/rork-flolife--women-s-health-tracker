@@ -297,12 +297,13 @@ export class HIPAASecureStorage {
   // Get current session ID
   private static async getCurrentSessionId(): Promise<string> {
     try {
-      let sessionId = await AsyncStorage.getItem('current_session_id');
+      const sessionId = await AsyncStorage.getItem('current_session_id');
       if (!sessionId) {
-        sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-        await AsyncStorage.setItem('current_session_id', sessionId);
+        const newSessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        await AsyncStorage.setItem('current_session_id', newSessionId);
+        return newSessionId;
       }
-      return sessionId || 'unknown_session';
+      return sessionId;
     } catch (error) {
       return 'unknown_session';
     }

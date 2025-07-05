@@ -13,6 +13,22 @@ export default function AdvancedClinicalInsights() {
   const { profile, logs, cycles } = usePeriodStore();
   const [showDetailedRisks, setShowDetailedRisks] = useState(false);
 
+  const clinicalAnalysis = useMemo(() => {
+    if (!profile.lastPeriodStart || logs.length === 0) {
+      return null;
+    }
+
+    const clinicalPrediction = generateClinicalPrediction(logs, cycles, profile);
+    const symptomPatterns = analyzeSymptomPatterns(logs);
+    const telehealthRecommendations = generateTelehealthRecommendations(logs, cycles, clinicalPrediction);
+
+    return {
+      clinicalPrediction,
+      symptomPatterns,
+      telehealthRecommendations
+    };
+  }, [profile, logs, cycles]);
+
   const styles = StyleSheet.create({
     container: {
       gap: 16,
@@ -240,22 +256,6 @@ export default function AdvancedClinicalInsights() {
       flex: 1,
     },
   });
-
-  const clinicalAnalysis = useMemo(() => {
-    if (!profile.lastPeriodStart || logs.length === 0) {
-      return null;
-    }
-
-    const clinicalPrediction = generateClinicalPrediction(logs, cycles, profile);
-    const symptomPatterns = analyzeSymptomPatterns(logs);
-    const telehealthRecommendations = generateTelehealthRecommendations(logs, cycles, clinicalPrediction);
-
-    return {
-      clinicalPrediction,
-      symptomPatterns,
-      telehealthRecommendations
-    };
-  }, [profile, logs, cycles]);
 
   if (!clinicalAnalysis) {
     return (
