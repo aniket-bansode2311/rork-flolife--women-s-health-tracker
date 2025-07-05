@@ -274,9 +274,9 @@ export class NotificationManager {
         
         if (secondsFromNow > 0) {
           const trigger: Notifications.TimeIntervalTriggerInput = {
+            type: 'timeInterval',
             seconds: secondsFromNow,
             repeats: false,
-            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
           };
 
           await Notifications.scheduleNotificationAsync({
@@ -330,10 +330,10 @@ export class NotificationManager {
       } else {
         // Native repeating notifications - Use proper CalendarTriggerInput
         const trigger: Notifications.CalendarTriggerInput = {
+          type: 'calendar',
           hour: options.hour,
           minute: options.minute,
           repeats: true,
-          type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
         };
 
         await Notifications.scheduleNotificationAsync({
