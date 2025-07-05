@@ -4,7 +4,9 @@ import { usePeriodStore } from '@/store/periodStore';
 import { useTheme } from '@/hooks/useTheme';
 import { getTodayISO, subtractDays, getMonthDates, addDays } from '@/utils/dateUtils';
 import CyclixLogo from './CyclixLogo';
+import { GDPRConsent, ConsentSettings } from './GDPRConsent';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface HistoricalPeriod {
   startDate: string;
@@ -22,9 +24,10 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() - 1); // Start from last month
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  const [consents, setConsents] = useState<ConsentSettings | null>(null);
   
   const handleNext = () => {
-    if (step < 4) {
+    if (step < 5) {
       if (step === 3 && selectedDates.length === 0 && historicalPeriods.length === 0) {
         Alert.alert('Add Historical Data', 'Please select your period dates from the calendar, or skip to continue with default settings.');
         return;
@@ -44,6 +47,15 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
   const handleSkip = () => {
     if (step === 3) {
       setStep(4);
+    } else if (step === 4) {
+      // Skip GDPR consent with default settings
+      setConsents({
+        analyticsConsent: false,
+        healthSyncConsent: false,
+        marketingConsent: false,
+        researchConsent: false,
+      });
+      setStep(5);
     }
   };
   
@@ -149,7 +161,16 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
     setHistoricalPeriods(prev => prev.filter((_, i) => i !== index));
   };
   
-  const completeOnboarding = () => {
+  const completeOnboarding = async () => {
+    // Save consent settings
+    if (consents) {
+      try {
+        await AsyncStorage.setItem('user_consents', JSON.stringify(consents));
+      } catch (error) {
+        console.error('Error saving consents:', error);
+      }
+    }
+    
     // Add selected periods to historical data
     let allPeriods = [...historicalPeriods];
     
@@ -365,7 +386,19 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
     );
   };
   
+  const handleConsentComplete = (consentSettings: ConsentSettings) => {
+    setConsents(consentSettings);
+    setStep(5);
+  };
+
   const renderStep4 = () => (
+    <GDPRConsent 
+      onComplete={handleConsentComplete}
+      onSkip={() => handleSkip()}
+    />
+  );
+
+  const renderStep5 = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>Review Your Data</Text>
       <Text style={styles.stepDescription}>
@@ -388,6 +421,11 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
           <Text style={styles.summaryValue}>
             {historicalPeriods.length + (selectedDates.length > 0 ? groupConsecutiveDates(selectedDates).length : 0)} periods
           </Text>
+        </View>
+        
+        <View style={styles.summaryItem}>
+          <Text style={styles.summaryLabel}>Privacy Preferences:</Text>
+          <Text style={styles.summaryValue}>Configured</Text>
         </View>
       </View>
       
@@ -693,9 +731,9 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
     <View style={styles.container}>
       <View style={styles.progressContainer}>
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${(step / 4) * 100}%` }]} />
+          <View style={[styles.progressFill, { width: `${(step / 5) * 100}%` }]} />
         </View>
-        <Text style={styles.progressText}>Step {step} of 4</Text>
+        <Text style={styles.progressText}>Step {step} of 5</Text>
       </View>
       
       <ScrollView style={styles.content}>
@@ -703,6 +741,7 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
         {step === 4 && renderStep4()}
+        {step === 5 && renderStep5()}
       </ScrollView>
       
       <View style={styles.buttonContainer}>
@@ -712,17 +751,19 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
           </TouchableOpacity>
         )}
         
-        {step === 3 && (
+        {(step === 3 || step === 4) && (
           <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
             <Text style={styles.skipButtonText}>Skip</Text>
           </TouchableOpacity>
         )}
         
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>
-            {step < 4 ? 'Next' : 'Get Started'}
-          </Text>
-        </TouchableOpacity>
+        {step !== 4 && (
+          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+            <Text style={styles.nextButtonText}>
+              {step < 5 ? 'Next' : 'Get Started'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

@@ -1,13 +1,14 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert, ScrollView, Share, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert, ScrollView, Share, Platform, Linking } from 'react-native';
 import { Stack } from 'expo-router';
 import { usePeriodStore } from '@/store/periodStore';
 import { useTheme } from '@/hooks/useTheme';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
-import { ChevronRight, Info, Download } from 'lucide-react-native';
+import { ChevronRight, Info, Download, Shield, ExternalLink } from 'lucide-react-native';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { ConsentManagement } from '@/components/ConsentManagement';
 import { validateCycleLength, validatePeriodLength } from '@/utils/validation';
 import { APP_CONFIG } from '@/constants/app';
 import * as FileSystem from 'expo-file-system';
@@ -18,6 +19,7 @@ export default function SettingsScreen() {
   const [cycleLength, setCycleLength] = useState(profile.cycleAvgLength.toString());
   const [periodLength, setPeriodLength] = useState(profile.periodAvgLength.toString());
   const [notifications, setNotifications] = useState(true);
+  const [showConsentManagement, setShowConsentManagement] = useState(false);
   
   const { isLoading: isExporting, execute: executeExport } = useAsyncOperation();
 
@@ -117,19 +119,27 @@ export default function SettingsScreen() {
   }, [resetAllData]);
 
   const handlePrivacyPolicy = useCallback(() => {
-    Alert.alert(
-      'Privacy Policy',
-      'Your health data is stored locally on your device and is never shared with third parties without your explicit consent. We use industry-standard encryption to protect your information.',
-      [{ text: 'OK' }]
-    );
+    Linking.openURL('https://cyclix.app/privacy').catch(() => {
+      Alert.alert(
+        'Privacy Policy',
+        'Your health data is stored locally on your device and is never shared with third parties without your explicit consent. We use industry-standard encryption to protect your information.',
+        [{ text: 'OK' }]
+      );
+    });
   }, []);
 
   const handleTermsOfService = useCallback(() => {
-    Alert.alert(
-      'Terms of Service',
-      `By using ${APP_CONFIG.NAME}, you agree to use it for personal health tracking purposes only. This app is not a substitute for professional medical advice.`,
-      [{ text: 'OK' }]
-    );
+    Linking.openURL('https://cyclix.app/terms').catch(() => {
+      Alert.alert(
+        'Terms of Service',
+        `By using ${APP_CONFIG.NAME}, you agree to use it for personal health tracking purposes only. This app is not a substitute for professional medical advice.`,
+        [{ text: 'OK' }]
+      );
+    });
+  }, []);
+
+  const handleConsentManagement = useCallback(() => {
+    setShowConsentManagement(true);
   }, []);
 
   const styles = StyleSheet.create({
@@ -328,16 +338,32 @@ export default function SettingsScreen() {
           </View>
         </TouchableOpacity>
 
+        <TouchableOpacity style={styles.menuItem} onPress={handleConsentManagement}>
+          <View style={styles.menuItemContent}>
+            <View style={styles.exportButton}>
+              <Shield size={20} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.menuItemText}>Privacy & Consent</Text>
+            </View>
+            <ChevronRight size={20} color={colors.subtext} />
+          </View>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.menuItem} onPress={handlePrivacyPolicy}>
           <View style={styles.menuItemContent}>
-            <Text style={styles.menuItemText}>Privacy Policy</Text>
+            <View style={styles.exportButton}>
+              <ExternalLink size={20} color={colors.subtext} style={{ marginRight: 8 }} />
+              <Text style={styles.menuItemText}>Privacy Policy</Text>
+            </View>
             <ChevronRight size={20} color={colors.subtext} />
           </View>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem} onPress={handleTermsOfService}>
           <View style={styles.menuItemContent}>
-            <Text style={styles.menuItemText}>Terms of Service</Text>
+            <View style={styles.exportButton}>
+              <ExternalLink size={20} color={colors.subtext} style={{ marginRight: 8 }} />
+              <Text style={styles.menuItemText}>Terms of Service</Text>
+            </View>
             <ChevronRight size={20} color={colors.subtext} />
           </View>
         </TouchableOpacity>
@@ -361,6 +387,12 @@ export default function SettingsScreen() {
           text="Exporting your data..."
           overlay
         />
+      )}
+
+      {showConsentManagement && (
+        <View style={StyleSheet.absoluteFill}>
+          <ConsentManagement onBack={() => setShowConsentManagement(false)} />
+        </View>
       )}
     </ScrollView>
   );
