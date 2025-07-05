@@ -129,29 +129,6 @@ export default function CycleInsights() {
     }
   };
 
-  const stats = [
-    {
-      value: enhancedPrediction?.confidence && enhancedPrediction.confidence > 0.7 
-        ? `${Math.round(enhancedPrediction.confidence * 100)}%`
-        : `${profile.cycleAvgLength} days`,
-      label: enhancedPrediction?.confidence && enhancedPrediction.confidence > 0.7 
-        ? 'Prediction Confidence' 
-        : 'Avg Cycle Length'
-    },
-    {
-      value: `${profile.periodAvgLength} days`,
-      label: 'Period Length'
-    },
-    {
-      value: getNextPeriodText(),
-      label: 'Next Period'
-    },
-    {
-      value: `${cycles.length}`,
-      label: 'Cycles Tracked'
-    },
-  ];
-
   const styles = StyleSheet.create({
     phaseContainer: {
       marginBottom: 16,
@@ -272,13 +249,28 @@ export default function CycleInsights() {
       </View>
 
       <View style={styles.statsContainer}>
-        {stats.map((stat, index) => (
+        <StatRow 
+          label="Avg. Cycle Length" 
+          value={`${profile.cycleAvgLength} days`}
+        />
+        <StatRow 
+          label="Avg. Period Length" 
+          value={`${profile.periodAvgLength} days`}
+        />
+        <StatRow 
+          label="Next Period" 
+          value={getNextPeriodText()}
+        />
+        <StatRow 
+          label="Cycles Tracked" 
+          value={cycles.length.toString()}
+        />
+        {enhancedPrediction && enhancedPrediction.confidence > 0.7 && (
           <StatRow 
-            key={index} 
-            label={stat.label} 
-            value={stat.value} 
+            label="Prediction Confidence" 
+            value={`${Math.round(enhancedPrediction.confidence * 100)}%`}
           />
-        ))}
+        )}
       </View>
 
       <View style={styles.aiInsightsContainer}>

@@ -276,6 +276,7 @@ export const usePeriodStore = create<PeriodState>()(
             
             const cycles: CycleData[] = [];
             
+            // Create cycles from all consecutive period groups, with more lenient validation
             for (let i = 0; i < periodGroups.length - 1; i++) {
               const currentPeriod = periodGroups[i];
               const nextPeriod = periodGroups[i + 1];
@@ -290,10 +291,8 @@ export const usePeriodStore = create<PeriodState>()(
                 (1000 * 60 * 60 * 24)
               );
               
-              if (cycleLength >= CYCLE_CONSTANTS.MIN_CYCLE_LENGTH && 
-                  cycleLength <= CYCLE_CONSTANTS.MAX_CYCLE_LENGTH && 
-                  periodLength >= CYCLE_CONSTANTS.MIN_PERIOD_LENGTH && 
-                  periodLength <= CYCLE_CONSTANTS.MAX_PERIOD_LENGTH) {
+              // More lenient validation - accept wider range of cycle lengths
+              if (cycleLength >= 15 && cycleLength <= 60 && periodLength >= 1 && periodLength <= 15) {
                 cycles.push({
                   startDate: currentPeriod.start,
                   endDate: nextPeriod.start,
@@ -303,27 +302,56 @@ export const usePeriodStore = create<PeriodState>()(
               }
             }
             
+            // Calculate averages from actual data, not defaults
             let cycleAvgLength = CYCLE_CONSTANTS.DEFAULT_CYCLE_LENGTH;
             let periodAvgLength = CYCLE_CONSTANTS.DEFAULT_PERIOD_LENGTH;
             
+            // First priority: use calculated cycles
             if (cycles.length > 0) {
               const cycleLengths = cycles.map(c => c.length);
-              cycleAvgLength = Math.round(cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length) as number;
+              cycleAvgLength = Math.round(cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length);
               
               const periodLengths = cycles.map(c => c.periodLength);
-              periodAvgLength = Math.round(periodLengths.reduce((sum, len) => sum + len, 0) / periodLengths.length) as number;
-            } else if (periodGroups.length > 0) {
+              periodAvgLength = Math.round(periodLengths.reduce((sum, len) => sum + len, 0) / periodLengths.length);
+            } 
+            // Second priority: calculate from period groups even if cycles are incomplete
+            else if (periodGroups.length > 0) {
+              // Calculate period lengths from all period groups
               const periodLengths = periodGroups.map(group => {
                 return Math.round(
                   (new Date(group.end).getTime() - new Date(group.start).getTime()) / 
                   (1000 * 60 * 60 * 24)
                 ) + 1;
-              }).filter(len => len >= CYCLE_CONSTANTS.MIN_PERIOD_LENGTH && len <= CYCLE_CONSTANTS.MAX_PERIOD_LENGTH);
+              }).filter(len => len >= 1 && len <= 15);
               
               if (periodLengths.length > 0) {
-                periodAvgLength = Math.round(periodLengths.reduce((sum, len) => sum + len, 0) / periodLengths.length) as number;
+                periodAvgLength = Math.round(periodLengths.reduce((sum, len) => sum + len, 0) / periodLengths.length);
+              }
+              
+              // Try to estimate cycle length from period spacing
+              if (periodGroups.length >= 2) {
+                const cycleLengths: number[] = [];
+                for (let i = 0; i < periodGroups.length - 1; i++) {
+                  const cycleLength = Math.round(
+                    (new Date(periodGroups[i + 1].start).getTime() - new Date(periodGroups[i].start).getTime()) / 
+                    (1000 * 60 * 60 * 24)
+                  );
+                  if (cycleLength >= 15 && cycleLength <= 60) {
+                    cycleLengths.push(cycleLength);
+                  }
+                }
+                
+                if (cycleLengths.length > 0) {
+                  cycleAvgLength = Math.round(cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length);
+                }
               }
             }
+            
+            // Ensure calculated values are within reasonable bounds
+            cycleAvgLength = Math.max(CYCLE_CONSTANTS.MIN_CYCLE_LENGTH, 
+              Math.min(CYCLE_CONSTANTS.MAX_CYCLE_LENGTH, cycleAvgLength));
+            periodAvgLength = Math.max(CYCLE_CONSTANTS.MIN_PERIOD_LENGTH, 
+              Math.min(CYCLE_CONSTANTS.MAX_PERIOD_LENGTH, periodAvgLength));
             
             const updatedProfile: UserProfile = {
               ...state.profile,
@@ -332,6 +360,7 @@ export const usePeriodStore = create<PeriodState>()(
             };
             
             console.log('Calculated cycles:', cycles.length);
+            console.log('Period groups found:', periodGroups.length);
             console.log('Average cycle length:', cycleAvgLength);
             console.log('Average period length:', periodAvgLength);
             

@@ -18,8 +18,8 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
   const { colors } = useTheme();
   const { updateProfile, setFirstLaunch, addHistoricalData } = usePeriodStore();
   const [step, setStep] = useState(1);
-  const [cycleLength, setCycleLength] = useState('28');
-  const [periodLength, setPeriodLength] = useState('5');
+  const [cycleLength, setCycleLength] = useState('');
+  const [periodLength, setPeriodLength] = useState('');
   const [historicalPeriods, setHistoricalPeriods] = useState<HistoricalPeriod[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() - 1); // Start from last month
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -182,16 +182,58 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
     // Sort periods by date (oldest first)
     allPeriods.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     
-    // Set initial profile values
-    const initialCycleLength = parseInt(cycleLength, 10) || 28;
-    const initialPeriodLength = parseInt(periodLength, 10) || 5;
+    // Calculate initial values from historical data if available
+    let initialCycleLength = 28; // Default
+    let initialPeriodLength = 5; // Default
+    
+    // Use user input if provided
+    if (cycleLength && parseInt(cycleLength, 10) > 0) {
+      initialCycleLength = parseInt(cycleLength, 10);
+    }
+    if (periodLength && parseInt(periodLength, 10) > 0) {
+      initialPeriodLength = parseInt(periodLength, 10);
+    }
+    
+    // If we have historical data, calculate averages from it
+    if (allPeriods.length > 0) {
+      // Calculate average period length from historical data
+      const periodLengths = allPeriods.map(p => p.length);
+      const avgPeriodLength = Math.round(periodLengths.reduce((sum, len) => sum + len, 0) / periodLengths.length);
+      
+      // Only override user input if they didn't provide any
+      if (!periodLength || parseInt(periodLength, 10) <= 0) {
+        initialPeriodLength = avgPeriodLength;
+      }
+      
+      // Calculate cycle lengths if we have multiple periods
+      if (allPeriods.length >= 2) {
+        const cycleLengths: number[] = [];
+        for (let i = 0; i < allPeriods.length - 1; i++) {
+          const cycleLength = Math.round(
+            (new Date(allPeriods[i + 1].startDate).getTime() - new Date(allPeriods[i].startDate).getTime()) / 
+            (1000 * 60 * 60 * 24)
+          );
+          if (cycleLength >= 15 && cycleLength <= 60) {
+            cycleLengths.push(cycleLength);
+          }
+        }
+        
+        if (cycleLengths.length > 0) {
+          const avgCycleLength = Math.round(cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length);
+          // Only override user input if they didn't provide any
+          if (!cycleLength || parseInt(cycleLength, 10) <= 0) {
+            initialCycleLength = avgCycleLength;
+          }
+        }
+      }
+    }
     
     let lastPeriodStart = null;
     if (allPeriods.length > 0) {
       lastPeriodStart = allPeriods[allPeriods.length - 1].startDate;
     }
     
-    // Update profile with initial values
+    // Update profile with calculated values
     updateProfile({
       cycleAvgLength: initialCycleLength,
       periodAvgLength: initialPeriodLength,
@@ -254,7 +296,7 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>Your Cycle Details</Text>
       <Text style={styles.stepDescription}>
-        These are starting estimates. Our AI will learn and adjust based on your actual data.
+        If you know your typical cycle details, enter them below. Otherwise, leave blank and our AI will calculate them from your historical data.
       </Text>
       
       <View style={styles.inputRow}>
@@ -263,7 +305,7 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
           <TextInput
             style={styles.input}
             keyboardType="number-pad"
-            placeholder="28"
+            placeholder="Auto-calculate"
             placeholderTextColor={colors.subtext}
             value={cycleLength}
             onChangeText={setCycleLength}
@@ -278,7 +320,7 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
           <TextInput
             style={styles.input}
             keyboardType="number-pad"
-            placeholder="5"
+            placeholder="Auto-calculate"
             placeholderTextColor={colors.subtext}
             value={periodLength}
             onChangeText={setPeriodLength}
@@ -286,6 +328,10 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
           <Text style={styles.inputLabel}>days</Text>
         </View>
       </View>
+      
+      <Text style={styles.helpText}>
+        💡 Tip: If you provide historical period data in the next step, we'll automatically calculate these values for you!
+      </Text>
     </View>
   );
   
@@ -398,42 +444,100 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
     />
   );
 
-  const renderStep5 = () => (
-    <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Review Your Data</Text>
-      <Text style={styles.stepDescription}>
-        Here's what we've collected. You can always add more data later in the app.
-      </Text>
+  const renderStep5 = () => {
+    // Calculate what the final values will be
+    let finalCycleLength = 28;
+    let finalPeriodLength = 5;
+    
+    // Use user input if provided
+    if (cycleLength && parseInt(cycleLength, 10) > 0) {
+      finalCycleLength = parseInt(cycleLength, 10);
+    }
+    if (periodLength && parseInt(periodLength, 10) > 0) {
+      finalPeriodLength = parseInt(periodLength, 10);
+    }
+    
+    // Calculate from historical data if available
+    let allPeriods = [...historicalPeriods];
+    if (selectedDates.length > 0) {
+      const newPeriods = groupConsecutiveDates(selectedDates);
+      allPeriods = [...allPeriods, ...newPeriods];
+    }
+    
+    if (allPeriods.length > 0) {
+      // Calculate average period length from historical data
+      const periodLengths = allPeriods.map(p => p.length);
+      const avgPeriodLength = Math.round(periodLengths.reduce((sum, len) => sum + len, 0) / periodLengths.length);
       
-      <View style={styles.summaryContainer}>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Cycle Length:</Text>
-          <Text style={styles.summaryValue}>{cycleLength} days</Text>
+      // Only override user input if they didn't provide any
+      if (!periodLength || parseInt(periodLength, 10) <= 0) {
+        finalPeriodLength = avgPeriodLength;
+      }
+      
+      // Calculate cycle lengths if we have multiple periods
+      if (allPeriods.length >= 2) {
+        const cycleLengths: number[] = [];
+        for (let i = 0; i < allPeriods.length - 1; i++) {
+          const cycleLength = Math.round(
+            (new Date(allPeriods[i + 1].startDate).getTime() - new Date(allPeriods[i].startDate).getTime()) / 
+            (1000 * 60 * 60 * 24)
+          );
+          if (cycleLength >= 15 && cycleLength <= 60) {
+            cycleLengths.push(cycleLength);
+          }
+        }
+        
+        if (cycleLengths.length > 0) {
+          const avgCycleLength = Math.round(cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length);
+          // Only override user input if they didn't provide any
+          if (!cycleLength || parseInt(cycleLength, 10) <= 0) {
+            finalCycleLength = avgCycleLength;
+          }
+        }
+      }
+    }
+    
+    return (
+      <View style={styles.stepContainer}>
+        <Text style={styles.stepTitle}>Review Your Data</Text>
+        <Text style={styles.stepDescription}>
+          Here's what we've collected. You can always add more data later in the app.
+        </Text>
+        
+        <View style={styles.summaryContainer}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Cycle Length:</Text>
+            <Text style={styles.summaryValue}>
+              {finalCycleLength} days {(!cycleLength || parseInt(cycleLength, 10) <= 0) && allPeriods.length >= 2 ? '(calculated)' : ''}
+            </Text>
+          </View>
+          
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Period Length:</Text>
+            <Text style={styles.summaryValue}>
+              {finalPeriodLength} days {(!periodLength || parseInt(periodLength, 10) <= 0) && allPeriods.length > 0 ? '(calculated)' : ''}
+            </Text>
+          </View>
+          
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Historical Periods:</Text>
+            <Text style={styles.summaryValue}>
+              {allPeriods.length} periods
+            </Text>
+          </View>
+          
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Privacy Preferences:</Text>
+            <Text style={styles.summaryValue}>Configured</Text>
+          </View>
         </View>
         
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Period Length:</Text>
-          <Text style={styles.summaryValue}>{periodLength} days</Text>
-        </View>
-        
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Historical Periods:</Text>
-          <Text style={styles.summaryValue}>
-            {historicalPeriods.length + (selectedDates.length > 0 ? groupConsecutiveDates(selectedDates).length : 0)} periods
-          </Text>
-        </View>
-        
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Privacy Preferences:</Text>
-          <Text style={styles.summaryValue}>Configured</Text>
-        </View>
+        <Text style={styles.aiNote}>
+          🤖 Our AI will use this data to provide personalized cycle predictions and health insights. The more historical data you provide, the more accurate our predictions will be.
+        </Text>
       </View>
-      
-      <Text style={styles.aiNote}>
-        🤖 Our AI will use this data to provide personalized cycle predictions and health insights. The more historical data you provide, the more accurate our predictions will be.
-      </Text>
-    </View>
-  );
+    );
+  };
   
   const styles = StyleSheet.create({
     container: {
@@ -497,7 +601,7 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
       borderRadius: 8,
       padding: Platform.OS === 'android' ? 16 : 12,
       fontSize: Platform.OS === 'android' ? 18 : 16,
-      width: Platform.OS === 'android' ? 100 : 80,
+      width: Platform.OS === 'android' ? 120 : 100,
       textAlign: 'center',
       marginRight: 8,
       color: colors.text,
@@ -513,6 +617,16 @@ export default function OnboardingScreen({ onComplete }: { onComplete: () => voi
       justifyContent: 'space-between',
       marginVertical: 16,
       paddingHorizontal: Platform.OS === 'android' ? 8 : 0,
+    },
+    helpText: {
+      fontSize: Platform.OS === 'android' ? 16 : 14,
+      color: colors.secondary,
+      textAlign: 'center',
+      marginTop: 16,
+      fontStyle: 'italic',
+      backgroundColor: colors.card,
+      padding: 12,
+      borderRadius: 8,
     },
     calendarContainer: {
       backgroundColor: colors.card,

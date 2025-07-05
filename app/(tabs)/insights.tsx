@@ -53,6 +53,87 @@ export default function InsightsScreen() {
       count,
       name: moods.find(m => m.id === id)?.name || id,
     }));
+
+  // Get all period groups from logs for better history display
+  const getPeriodGroups = () => {
+    const sortedLogs = [...logs].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    const periodGroups: { start: string; end: string; logs: any[]; length: number }[] = [];
+    let currentGroup: { start: string; end: string; logs: any[] } | null = null;
+    
+    for (let i = 0; i < sortedLogs.length; i++) {
+      const log = sortedLogs[i];
+      const currentDate = new Date(log.date);
+      
+      if (log.flow !== 'none') {
+        if (!currentGroup) {
+          currentGroup = { 
+            start: log.date, 
+            end: log.date, 
+            logs: [log] 
+          };
+        } else {
+          const lastDate = new Date(currentGroup.end);
+          const daysDiff = Math.round((currentDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (daysDiff <= 2) {
+            currentGroup.end = log.date;
+            currentGroup.logs.push(log);
+          } else {
+            const periodLength = Math.round(
+              (new Date(currentGroup.end).getTime() - new Date(currentGroup.start).getTime()) / 
+              (1000 * 60 * 60 * 24)
+            ) + 1;
+            
+            periodGroups.push({
+              ...currentGroup,
+              length: periodLength
+            });
+            
+            currentGroup = { 
+              start: log.date, 
+              end: log.date, 
+              logs: [log] 
+            };
+          }
+        }
+      } else if (currentGroup) {
+        const lastDate = new Date(currentGroup.end);
+        const daysDiff = Math.round((currentDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysDiff > 2) {
+          const periodLength = Math.round(
+            (new Date(currentGroup.end).getTime() - new Date(currentGroup.start).getTime()) / 
+            (1000 * 60 * 60 * 24)
+          ) + 1;
+          
+          periodGroups.push({
+            ...currentGroup,
+            length: periodLength
+          });
+          currentGroup = null;
+        }
+      }
+    }
+    
+    if (currentGroup) {
+      const periodLength = Math.round(
+        (new Date(currentGroup.end).getTime() - new Date(currentGroup.start).getTime()) / 
+        (1000 * 60 * 60 * 24)
+      ) + 1;
+      
+      periodGroups.push({
+        ...currentGroup,
+        length: periodLength
+      });
+    }
+    
+    return periodGroups.reverse(); // Most recent first
+  };
+
+  const periodGroups = getPeriodGroups();
   
   const styles = StyleSheet.create({
     container: {
@@ -368,6 +449,34 @@ export default function InsightsScreen() {
       fontSize: 12,
       color: colors.subtext,
     },
+    periodItem: {
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      paddingVertical: 12,
+    },
+    periodHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+    },
+    periodDate: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    periodLength: {
+      fontSize: 16,
+      color: colors.primary,
+      fontWeight: '600',
+    },
+    periodDetails: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    periodDetailText: {
+      fontSize: 14,
+      color: colors.subtext,
+    },
   });
   
   const renderCycleTab = () => (
@@ -388,7 +497,7 @@ export default function InsightsScreen() {
           
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{cycles.length}</Text>
-            <Text style={styles.statLabel}>Cycles Tracked</Text>
+            <Text style={styles.statLabel}>Complete Cycles</Text>
           </View>
         </View>
       </View>
@@ -428,10 +537,42 @@ export default function InsightsScreen() {
       )}
       
       <View style={styles.insightCard}>
-        <Text style={styles.cardTitle}>Cycle History</Text>
+        <Text style={styles.cardTitle}>Period History ({periodGroups.length} periods tracked)</Text>
         
-        {cycles.length > 0 ? (
-          cycles.map((cycle, index) => (
+        {periodGroups.length > 0 ? (
+          periodGroups.map((period, index) => (
+            <View key={index} style={styles.periodItem}>
+              <View style={styles.periodHeader}>
+                <Text style={styles.periodDate}>
+                  Period {periodGroups.length - index}
+                </Text>
+                <Text style={styles.periodLength}>
+                  {period.length} days
+                </Text>
+              </View>
+              
+              <View style={styles.periodDetails}>
+                <Text style={styles.periodDetailText}>
+                  Started: {new Date(period.start).toLocaleDateString()}
+                </Text>
+                <Text style={styles.periodDetailText}>
+                  Ended: {new Date(period.end).toLocaleDateString()}
+                </Text>
+              </View>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.emptyText}>
+            No period history available yet
+          </Text>
+        )}
+      </View>
+
+      {cycles.length > 0 && (
+        <View style={styles.insightCard}>
+          <Text style={styles.cardTitle}>Complete Cycle History ({cycles.length} cycles)</Text>
+          
+          {cycles.map((cycle, index) => (
             <View key={index} style={styles.cycleItem}>
               <View style={styles.cycleHeader}>
                 <Text style={styles.cycleDate}>
@@ -451,13 +592,9 @@ export default function InsightsScreen() {
                 </Text>
               </View>
             </View>
-          ))
-        ) : (
-          <Text style={styles.emptyText}>
-            No cycle history available yet
-          </Text>
-        )}
-      </View>
+          ))}
+        </View>
+      )}
     </View>
   );
   
