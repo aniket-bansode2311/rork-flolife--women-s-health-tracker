@@ -276,6 +276,7 @@ export class NotificationManager {
           const trigger: Notifications.TimeIntervalTriggerInput = {
             type: 'timeInterval',
             seconds: secondsFromNow,
+            repeats: false,
           };
 
           await Notifications.scheduleNotificationAsync({
