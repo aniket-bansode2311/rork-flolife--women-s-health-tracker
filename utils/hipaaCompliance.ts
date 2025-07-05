@@ -381,7 +381,12 @@ export class HIPAASessionManager {
   // Start a new session
   static async startSession(userId: string): Promise<string> {
     try {
-      const sessionId = CryptoJS.lib.WordArray.random(16).toString();
+      // Generate session ID using crypto random bytes
+      const randomBytes = await Crypto.getRandomBytesAsync(16);
+      const sessionId = Array.from(randomBytes)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      
       await AsyncStorage.setItem('current_session_id', sessionId);
       await AsyncStorage.setItem('session_user_id', userId);
       
