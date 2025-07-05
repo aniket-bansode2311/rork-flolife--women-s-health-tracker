@@ -269,12 +269,13 @@ export class NotificationManager {
           }
         }
       } else {
-        // Native notifications - Use proper TimeIntervalTriggerInput
+        // Native notifications - Use proper TimeIntervalTriggerInput with required type
         const secondsFromNow = Math.floor((options.trigger.getTime() - Date.now()) / 1000);
         
         if (secondsFromNow > 0) {
           const trigger: Notifications.TimeIntervalTriggerInput = {
             seconds: secondsFromNow,
+            repeats: false,
           };
 
           await Notifications.scheduleNotificationAsync({
