@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { usePeriodStore } from '@/store/periodStore';
 import { useTheme } from '@/hooks/useTheme';
 import { getMonthDates, getTodayISO, predictNextPeriod, isDateInFertileWindow } from '@/utils/dateUtils';
+import { generateEnhancedPrediction, predictFutureCycles } from '@/utils/enhancedPredictions';
 import { CalendarHeader } from './calendar/CalendarHeader';
 import { CalendarDay } from './calendar/CalendarDay';
 import { CalendarLegend } from './calendar/CalendarLegend';
@@ -23,16 +24,25 @@ export default function CalendarView({ onSelectDate }: CalendarViewProps) {
   
   const { logs, profile } = usePeriodStore();
   
-  // Memoized calculations for better performance
-  const { nextPeriodStart } = useMemo(() => {
-    const nextPeriod = profile.lastPeriodStart 
-      ? predictNextPeriod(profile.lastPeriodStart, profile.cycleAvgLength)
-      : null;
+  // Enhanced predictions for better accuracy
+  const { nextPeriodStart, futurePredictions, enhancedPrediction } = useMemo(() => {
+    const enhanced = generateEnhancedPrediction(logs, cycles, profile);
+    const nextPeriod = enhanced?.nextPeriodDate || (
+      profile.lastPeriodStart 
+        ? predictNextPeriod(profile.lastPeriodStart, profile.cycleAvgLength)
+        : null
+    );
+    
+    const future = profile.lastPeriodStart 
+      ? predictFutureCycles(cycles, profile, 3)
+      : [];
       
     return {
       nextPeriodStart: nextPeriod,
+      futurePredictions: future,
+      enhancedPrediction: enhanced,
     };
-  }, [profile.lastPeriodStart, profile.cycleAvgLength]);
+  }, [profile.lastPeriodStart, profile.cycleAvgLength, logs, cycles]);
   
   // Memoized calendar dates
   const calendarDates = useMemo(() => {
@@ -47,8 +57,11 @@ export default function CalendarView({ onSelectDate }: CalendarViewProps) {
       const log = logs.find(log => log.date === isoDate);
       const isPeriodDay = log && log.flow !== 'none';
       
-      // Check predicted period
+      // Check predicted periods (including future cycles)
       let isPredictedPeriod = false;
+      let predictionConfidence = 0;
+      
+      // Check current prediction
       if (nextPeriodStart) {
         const nextPeriodDate = new Date(nextPeriodStart);
         for (let i = 0; i < profile.periodAvgLength; i++) {
@@ -57,6 +70,21 @@ export default function CalendarView({ onSelectDate }: CalendarViewProps) {
           
           if (date.toDateString() === periodDay.toDateString()) {
             isPredictedPeriod = true;
+            predictionConfidence = enhancedPrediction?.confidence || 0.7;
+            break;
+          }
+        }
+      }
+      
+      // Check future predictions
+      if (!isPredictedPeriod && futurePredictions.length > 0) {
+        for (const prediction of futurePredictions) {
+          const startDate = new Date(prediction.startDate);
+          const endDate = new Date(prediction.endDate);
+          
+          if (date >= startDate && date <= endDate) {
+            isPredictedPeriod = true;
+            predictionConfidence = prediction.confidence;
             break;
           }
         }
@@ -64,8 +92,31 @@ export default function CalendarView({ onSelectDate }: CalendarViewProps) {
       
       // Check fertile day using enhanced calculation
       let isFertileDay = false;
-      if (profile.lastPeriodStart) {
+      let isOvulationDay = false;
+      
+      if (enhancedPrediction) {
+        const dateStr = date.toISOString().split('T')[0];
+        const fertileWindow = enhancedPrediction.fertileWindow;
+        
+        isFertileDay = dateStr >= fertileWindow.start && dateStr <= fertileWindow.end;
+        isOvulationDay = dateStr === fertileWindow.ovulationDate;
+      } else if (profile.lastPeriodStart) {
         isFertileDay = isDateInFertileWindow(date, profile.lastPeriodStart, profile.cycleAvgLength);
+      }
+      
+      // Check future fertile windows
+      if (!isFertileDay && futurePredictions.length > 0) {
+        const dateStr = date.toISOString().split('T')[0];
+        for (const prediction of futurePredictions) {
+          const fertileWindow = prediction.fertileWindow;
+          if (dateStr >= fertileWindow.start && dateStr <= fertileWindow.end) {
+            isFertileDay = true;
+            if (dateStr === fertileWindow.ovulationDate) {
+              isOvulationDay = true;
+            }
+            break;
+          }
+        }
       }
       
       return {
@@ -76,6 +127,8 @@ export default function CalendarView({ onSelectDate }: CalendarViewProps) {
         isPeriodDay: !!isPeriodDay,
         isPredictedPeriod,
         isFertileDay,
+        isOvulationDay,
+        predictionConfidence,
       };
     });
   }, [currentYear, currentMonth, logs, selectedDate, nextPeriodStart, profile.periodAvgLength, profile.lastPeriodStart, profile.cycleAvgLength]);

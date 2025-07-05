@@ -308,10 +308,10 @@ export const usePeriodStore = create<PeriodState>()(
             
             if (cycles.length > 0) {
               const cycleLengths = cycles.map(c => c.length);
-              cycleAvgLength = Math.round(cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length);
+              cycleAvgLength = Math.round(cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length) as number;
               
               const periodLengths = cycles.map(c => c.periodLength);
-              periodAvgLength = Math.round(periodLengths.reduce((sum, len) => sum + len, 0) / periodLengths.length);
+              periodAvgLength = Math.round(periodLengths.reduce((sum, len) => sum + len, 0) / periodLengths.length) as number;
             } else if (periodGroups.length > 0) {
               const periodLengths = periodGroups.map(group => {
                 return Math.round(
@@ -321,7 +321,7 @@ export const usePeriodStore = create<PeriodState>()(
               }).filter(len => len >= CYCLE_CONSTANTS.MIN_PERIOD_LENGTH && len <= CYCLE_CONSTANTS.MAX_PERIOD_LENGTH);
               
               if (periodLengths.length > 0) {
-                periodAvgLength = Math.round(periodLengths.reduce((sum, len) => sum + len, 0) / periodLengths.length);
+                periodAvgLength = Math.round(periodLengths.reduce((sum, len) => sum + len, 0) / periodLengths.length) as number;
               }
             }
             
