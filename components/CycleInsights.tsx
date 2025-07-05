@@ -139,7 +139,7 @@ export default function CycleInsights() {
         : 'Avg Cycle Length'
     },
     {
-      value: profile.periodAvgLength,
+      value: `${profile.periodAvgLength} days`,
       label: 'Period Length'
     },
     {
@@ -147,7 +147,7 @@ export default function CycleInsights() {
       label: 'Next Period'
     },
     {
-      value: cycles.length,
+      value: `${cycles.length}`,
       label: 'Cycles Tracked'
     },
   ];
@@ -209,6 +209,12 @@ export default function CycleInsights() {
       fontWeight: '600',
       color: colors.text,
     },
+    statsContainer: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+    },
     aiInsightsContainer: {
       backgroundColor: colors.background,
       borderRadius: 12,
@@ -265,7 +271,15 @@ export default function CycleInsights() {
         <Text style={styles.daysSinceValue}>{daysSinceLastPeriod} days</Text>
       </View>
 
-      <StatRow stats={stats} />
+      <View style={styles.statsContainer}>
+        {stats.map((stat, index) => (
+          <StatRow 
+            key={index} 
+            label={stat.label} 
+            value={stat.value} 
+          />
+        ))}
+      </View>
 
       <View style={styles.aiInsightsContainer}>
         <Text style={styles.aiTitle}>AI Insights</Text>
