@@ -293,10 +293,12 @@ export class NotificationManager {
             hour: options.trigger.getHours(),
             minute: options.trigger.getMinutes(),
             repeats: true,
-          } as Notifications.DailyTriggerInput;
+          };
         } else {
           // For one-time notifications, use date trigger
-          triggerInput = options.trigger;
+          triggerInput = {
+            date: options.trigger,
+          };
         }
 
         await Notifications.scheduleNotificationAsync({
