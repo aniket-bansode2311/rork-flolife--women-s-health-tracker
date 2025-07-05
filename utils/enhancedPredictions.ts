@@ -57,7 +57,7 @@ export const predictCycleLength = (cycles: CycleData[]): CyclePrediction => {
     totalWeight += weight;
   });
   
-  const weightedAverage = weightedSum / totalWeight;
+  let weightedAverage = weightedSum / totalWeight;
   
   // Calculate variance to determine confidence
   const variance = sortedCycles.reduce((sum, cycle) => {
@@ -345,7 +345,11 @@ export const predictFutureCycles = (
       startDate: currentPeriodStart.toISOString().split('T')[0],
       endDate: periodEnd.toISOString().split('T')[0],
       confidence: futureConfidence,
-      fertileWindow
+      fertileWindow: {
+        start: fertilityWindow.start,
+        end: fertilityWindow.end,
+        ovulationDate: fertilityWindow.ovulationDate
+      }
     });
   }
   

@@ -14,7 +14,7 @@ interface CycleChartProps {
 }
 
 export default function CycleChart({ cycles, logs, type }: CycleChartProps) {
-  const { colors, isDark } = useTheme();
+  const { colors, isDarkMode } = useTheme();
 
   // Chart configuration
   const chartConfig = {
@@ -22,8 +22,8 @@ export default function CycleChart({ cycles, logs, type }: CycleChartProps) {
     backgroundGradientFrom: colors.card,
     backgroundGradientTo: colors.card,
     decimalPlaces: 0,
-    color: (opacity = 1) => `rgba(${isDark ? '255, 255, 255' : '0, 0, 0'}, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(${isDark ? '255, 255, 255' : '0, 0, 0'}, ${opacity})`,
+    color: (opacity = 1) => `rgba(${isDarkMode ? '255, 255, 255' : '0, 0, 0'}, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(${isDarkMode ? '255, 255, 255' : '0, 0, 0'}, ${opacity})`,
     style: {
       borderRadius: 16,
     },
@@ -114,14 +114,14 @@ export default function CycleChart({ cycles, logs, type }: CycleChartProps) {
 
     if (sortedSymptoms.length === 0) return null;
 
-    const colors = [
+    const chartColors = [
       '#FF6B8A', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'
     ];
 
     return sortedSymptoms.map(([symptom, count], index) => ({
       name: symptom.replace('_', ' ').toUpperCase(),
       population: count,
-      color: colors[index % colors.length],
+      color: chartColors[index % chartColors.length],
       legendFontColor: colors.text,
       legendFontSize: 12,
     }));

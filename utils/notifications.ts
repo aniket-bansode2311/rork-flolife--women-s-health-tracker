@@ -293,9 +293,13 @@ export class NotificationManager {
             data: options.data,
             sound: true,
           },
-          trigger: {
+          trigger: options.repeats ? {
+            type: 'date',
             date: options.trigger,
-            repeats: options.repeats || false,
+            repeats: true,
+          } : {
+            type: 'date',
+            date: options.trigger,
           },
         });
       }

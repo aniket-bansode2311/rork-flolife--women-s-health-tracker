@@ -22,6 +22,8 @@ export interface CalendarDate {
   isPeriodDay: boolean;
   isPredictedPeriod: boolean;
   isFertileDay: boolean;
+  isOvulationDay?: boolean;
+  predictionConfidence?: number;
 }
 
 export interface PredictionAccuracy {

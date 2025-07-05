@@ -2,48 +2,38 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 
-interface StatItem {
-  value: string | number;
-  label: string;
-}
-
 interface StatRowProps {
-  stats: StatItem[];
+  label: string;
+  value: string;
+  icon?: string;
 }
 
-export const StatRow: React.FC<StatRowProps> = memo(({ stats }) => {
+export const StatRow: React.FC<StatRowProps> = memo(({ label, value, icon }) => {
   const { colors } = useTheme();
 
   const styles = StyleSheet.create({
     container: {
       flexDirection: 'row',
-      justifyContent: 'space-around',
-    },
-    statItem: {
+      justifyContent: 'space-between',
       alignItems: 'center',
-      flex: 1,
+      paddingVertical: 8,
     },
-    statValue: {
-      fontSize: 24,
-      fontWeight: '600',
-      color: colors.primary,
-    },
-    statLabel: {
+    label: {
       fontSize: 14,
       color: colors.subtext,
-      textAlign: 'center',
-      marginTop: 4,
+      flex: 1,
+    },
+    value: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
     },
   });
 
   return (
     <View style={styles.container}>
-      {stats.map((stat, index) => (
-        <View key={index} style={styles.statItem}>
-          <Text style={styles.statValue}>{stat.value}</Text>
-          <Text style={styles.statLabel}>{stat.label}</Text>
-        </View>
-      ))}
+      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.value}>{value}</Text>
     </View>
   );
 });

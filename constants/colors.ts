@@ -10,6 +10,7 @@ export default {
     success: "#4CAF50",
     warning: "#FFC107",
     error: "#F44336",
+    info: "#2196F3",
   },
   dark: {
     primary: "#FF7C9C",
@@ -22,5 +23,6 @@ export default {
     success: "#66BB6A",
     warning: "#FFCA28",
     error: "#EF5350",
+    info: "#42A5F5",
   }
 };

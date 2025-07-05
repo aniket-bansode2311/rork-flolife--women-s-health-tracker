@@ -22,7 +22,7 @@ export default function CalendarView({ onSelectDate }: CalendarViewProps) {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [selectedDate, setSelectedDate] = useState(getTodayISO());
   
-  const { logs, profile } = usePeriodStore();
+  const { logs, cycles, profile } = usePeriodStore();
   
   // Enhanced predictions for better accuracy
   const { nextPeriodStart, futurePredictions, enhancedPrediction } = useMemo(() => {
@@ -131,7 +131,7 @@ export default function CalendarView({ onSelectDate }: CalendarViewProps) {
         predictionConfidence,
       };
     });
-  }, [currentYear, currentMonth, logs, selectedDate, nextPeriodStart, profile.periodAvgLength, profile.lastPeriodStart, profile.cycleAvgLength]);
+  }, [currentYear, currentMonth, logs, selectedDate, nextPeriodStart, profile.periodAvgLength, profile.lastPeriodStart, profile.cycleAvgLength, futurePredictions, enhancedPrediction]);
   
   const handlePreviousMonth = useCallback(() => {
     if (currentMonth === 0) {
